@@ -8,11 +8,17 @@ on:
   release:
     types: [created]
 
+# Default: read-only access for all jobs; override per-job where writes are needed.
+permissions:
+  contents: read
+
 jobs:
   # ─── Test ──────────────────────────────────────────────────────────────────
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +40,8 @@ jobs:
     name: Build Windows Installer
     needs: test
     runs-on: windows-latest
+    permissions:
+      contents: read
     # Build on every push to main AND on every release.
     if: github.event_name == 'push' || github.event_name == 'release'
 
@@ -64,6 +72,8 @@ jobs:
     name: Upload Release Assets
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to attach files to a GitHub Release
     if: github.event_name == 'release'
 
     steps:
