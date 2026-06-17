@@ -57,7 +57,7 @@ jobs:
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache Rust build artefacts
+      - name: Cache Rust build artifacts
         uses: actions/cache@v4
         with:
           path: |

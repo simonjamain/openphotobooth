@@ -1,5 +1,4 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema/acl/schemas/capability.schema.json",
   "identifier": "default",
   "description": "Default application capabilities",
   "windows": ["main"],
