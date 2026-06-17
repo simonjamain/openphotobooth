@@ -54,17 +54,32 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artefacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Build and package
-        run: npm run dist
+      - name: Build Tauri application
+        run: npm run tauri:build
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenPhotobooth-windows-installer
-          path: release/*.exe
+          path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
 
   # ─── Upload to GitHub Release ──────────────────────────────────────────────
@@ -87,3 +102,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release/*.exe
+

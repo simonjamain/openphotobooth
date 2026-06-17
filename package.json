@@ -2,39 +2,27 @@
   "name": "openphotobooth",
   "version": "1.0.0",
   "description": "Open-source photobooth software for use with tethering and auto-printing apps.",
-  "main": "dist/main/index.js",
   "scripts": {
-    "start": "npm run build && electron .",
-    "build": "tsc && node scripts/copy-assets.js",
-    "dist": "npm run build && electron-builder",
-    "test": "jest"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "tauri:build": "npm run build && tauri build",
+    "test": "vitest run"
   },
-  "keywords": ["photobooth", "electron", "digicamcontrol"],
+  "keywords": ["photobooth", "tauri", "digicamcontrol"],
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
-  "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "@types/node": "^22.0.0",
-    "electron": "^42.4.1",
-    "electron-builder": "^26.0.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.4.11",
-    "typescript": "^5.8.3"
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-fs": "^2.5.1"
   },
-  "build": {
-    "appId": "io.openphotobooth",
-    "productName": "OpenPhotobooth",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": "nsis"
-    }
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/path-browserify": "^1.0.3",
+    "path-browserify": "^1.0.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
   }
 }

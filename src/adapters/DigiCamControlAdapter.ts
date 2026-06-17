@@ -3,6 +3,7 @@ import { CameraPort } from '../domain/ports/CameraPort';
 /**
  * Camera adapter that triggers capture via the DigiCamControl simple HTTP API.
  * DigiCamControl must be running with its HTTP server enabled (default port 5513).
+ * The returned file path is normalised to forward slashes for cross-platform use.
  *
  * @see http://digicamcontrol.com/doc/userguide/web
  */
@@ -19,12 +20,13 @@ export class DigiCamControlAdapter implements CameraPort {
       );
     }
 
-    const filePath = (await response.text()).trim();
+    const rawPath = (await response.text()).trim();
 
-    if (!filePath || filePath.toLowerCase().includes('error')) {
-      throw new Error(`DigiCamControl returned an error: ${filePath}`);
+    if (!rawPath || rawPath.toLowerCase().includes('error')) {
+      throw new Error(`DigiCamControl returned an error: ${rawPath}`);
     }
 
-    return filePath;
+    // Normalise Windows backslashes so downstream path utilities work correctly.
+    return rawPath.replace(/\\/g, '/');
   }
 }

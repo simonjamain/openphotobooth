@@ -1,8 +1,8 @@
 import * as path from 'path';
-import { CaptureWorkflow } from '../../../src/main/domain/services/CaptureWorkflow';
-import { CameraPort } from '../../../src/main/domain/ports/CameraPort';
-import { FileSystemPort } from '../../../src/main/domain/ports/FileSystemPort';
-import { ImageProcessingPort } from '../../../src/main/domain/ports/ImageProcessingPort';
+import { describe, it, expect, vi } from 'vitest';
+import { CaptureWorkflow } from '../../../src/domain/services/CaptureWorkflow';
+import type { CameraPort } from '../../../src/domain/ports/CameraPort';
+import type { FileSystemPort } from '../../../src/domain/ports/FileSystemPort';
 
 const ORIGINAL_PATH = '/captures/photo.jpg';
 const FILENAME = 'photo.jpg';
@@ -11,12 +11,12 @@ function makeConfig() {
   return { saveFolder: '/save', hotPrintFolder: '/hotprint' };
 }
 
-function makeCamera(filePath = ORIGINAL_PATH): jest.Mocked<CameraPort> {
-  return { capture: jest.fn().mockResolvedValue(filePath) };
+function makeCamera(filePath = ORIGINAL_PATH) {
+  return { capture: vi.fn().mockResolvedValue(filePath) };
 }
 
-function makeFileSystem(): jest.Mocked<FileSystemPort> {
-  return { copyFile: jest.fn().mockResolvedValue(undefined) };
+function makeFileSystem() {
+  return { copyFile: vi.fn().mockResolvedValue(undefined) };
 }
 
 describe('CaptureWorkflow', () => {
@@ -82,8 +82,8 @@ describe('CaptureWorkflow', () => {
   });
 
   describe('with middlewares', () => {
-    function makeMiddleware(): jest.Mocked<ImageProcessingPort> {
-      return { process: jest.fn().mockResolvedValue(undefined) };
+    function makeMiddleware() {
+      return { process: vi.fn().mockResolvedValue(undefined) };
     }
 
     it('calls the middleware with the original file as input', async () => {
@@ -100,7 +100,7 @@ describe('CaptureWorkflow', () => {
       await workflow.run();
 
       expect(middleware.process).toHaveBeenCalledTimes(1);
-      const [inputArg] = middleware.process.mock.calls[0];
+      const inputArg = (middleware.process.mock.calls[0] as [string, string])[0];
       expect(inputArg).toBe(ORIGINAL_PATH);
     });
 
@@ -118,7 +118,7 @@ describe('CaptureWorkflow', () => {
       await workflow.run();
 
       // The processed output path is derived next to the original, with a prefix.
-      const [, outputArg] = middleware.process.mock.calls[0];
+      const outputArg = (middleware.process.mock.calls[0] as [string, string])[1];
       expect(fs.copyFile).toHaveBeenCalledWith(
         outputArg,
         path.join('/hotprint', FILENAME),
@@ -128,8 +128,8 @@ describe('CaptureWorkflow', () => {
 
   describe('error handling', () => {
     it('propagates errors thrown by the camera port', async () => {
-      const camera: jest.Mocked<CameraPort> = {
-        capture: jest.fn().mockRejectedValue(new Error('Camera offline')),
+      const camera: CameraPort = {
+        capture: vi.fn().mockRejectedValue(new Error('Camera offline')),
       };
       const fs = makeFileSystem();
       const workflow = new CaptureWorkflow(camera, fs, [], makeConfig());
@@ -139,8 +139,8 @@ describe('CaptureWorkflow', () => {
 
     it('propagates errors thrown by the file system port', async () => {
       const camera = makeCamera();
-      const fs: jest.Mocked<FileSystemPort> = {
-        copyFile: jest.fn().mockRejectedValue(new Error('Disk full')),
+      const fs: FileSystemPort = {
+        copyFile: vi.fn().mockRejectedValue(new Error('Disk full')),
       };
       const workflow = new CaptureWorkflow(camera, fs, [], makeConfig());
 
