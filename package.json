@@ -1,0 +1,28 @@
+{
+  "name": "openphotobooth",
+  "version": "1.0.0",
+  "description": "Open-source photobooth software for use with tethering and auto-printing apps.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "tauri:build": "npm run build && tauri build",
+    "test": "vitest run"
+  },
+  "keywords": ["photobooth", "tauri", "digicamcontrol"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-fs": "^2.5.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/path-browserify": "^1.0.3",
+    "path-browserify": "^1.0.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}
