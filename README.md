@@ -24,3 +24,13 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## Development hardware setup
+
+The main testing environment I use for testing is :
+
+- OS : Windows
+- DSLR : Nikon D5500
+- tethering app : DigiCamControl
+- printer : DNP QW410
+- printing app : DNP Hot Folder Print
