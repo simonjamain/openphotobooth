@@ -21,9 +21,8 @@ The app will be looping across 4 main steps (except for configuration screens an
 - 1 User select a flow
   - note : if only one flow is active, the app will skip the flow selection step and go directly to taking the photo(s)
 - 2 User take the photo(s)
-- 3 Processing the photo(s)
-- 4 archiving the photo(s)
-- 5 printing the photo(s)
+- 3 Processing (applying filters, archiving, printing, ...) the photo(s)
+    - Those nodes take an array of images as input and return another array of images as output that can be altered or not (also the number of images can change). Those node are the base blocks of the processing chain, they can be used for outputs, like printing, or for further processing, like applying filters or archiving.
 
 A flow is composed of a set of steps, starting with an entry node responsible for orchestrating the taking of one or more pictures.
 
@@ -34,17 +33,16 @@ A flow is configured like this :
   - order
     if multiple flows are available, the order will be used to display them in the UI
     this is probably selected in a parent screen, like a "flows selection" screen
-- nodes selection and configuration
+- pipeline configuration
     - entry node selection (and configuration)
+        - the entry node has a vue component responsible for orchestrating the taking of one or more pictures, and returning an array of images to the processing pipeline
     - camera node selection (and configuration)
-    - processing node(s) selection and ordering (and configuration)
-    - archiving node(s) selection and ordering (and configuration)
-    - printing node(s) selection and ordering (and configuration)
+    - processing node(s) selection and ordering(and configuration)
 
 The app is aimed to be highly modular, so that available nodes are provided by extensions.
 
 - extension example A : upload photos to google drive
-    - (archiving) node 1 : upload to google drive
+    - (processing) node 1 : upload to google drive
         - options
             - linking your account
             - choosing output folder
@@ -57,7 +55,7 @@ The app is aimed to be highly modular, so that available nodes are provided by e
         - options
             - choose or upload a template
 - extension example C : DNP hot folder printing
-    - (printing) node 1 : copy the processed photos into the hot folder used by the printing app
+    - (processing) node 1 : copy the processed photos into the hot folder used by the printing app
         - options
             - choose the hot folder used by the printing app
 - extension example D : IA prompt image processing
@@ -93,7 +91,7 @@ The base app will include the following extensions :
             - change the default digicamcontrol api url
             - choose the folder where digicamcontrol will save the photos (to get them back for processing)
 - hot folder printing
-    - (printing) node 1 : copy the processed photos into the hot folder used by the printing app
+    - (output) node 1 : copy the processed photos into the hot folder used by the printing app
         - options
             - choose the hot folder used by the printing app
             - set delay for printing (to ensure printer has time to print before the next photo is sent to it)
@@ -121,6 +119,8 @@ Agents will not try to exceed excpectations and will only implement the bare min
 - readable names in plain english (camelCase for variables/functions & PascalCase for types)
 - early returns over nested structures
 - hexagonal architecture
+- in Vue composables, prefer `ref` over `reactive`
+- prefer for(of/in) loops over .forEach() and whenever it is an option, for better readability and more intuitive await behaviour
 
 ## Continuous improvement/learning
 
