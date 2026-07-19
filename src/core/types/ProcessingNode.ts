@@ -1,5 +1,5 @@
 import type { Node } from "./Node"
 
 export interface ProcessingNode extends Node {
-    process(images: ImageBitmap[]): Promise<ImageBitmap[]>
+    process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]>
 }
