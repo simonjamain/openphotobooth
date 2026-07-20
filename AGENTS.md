@@ -119,8 +119,12 @@ Agents will not try to exceed excpectations and will only implement the bare min
 - readable names in plain english (camelCase for variables/functions & PascalCase for types)
 - early returns over nested structures
 - hexagonal architecture
-- in Vue composables, prefer `ref` over `reactive`
 - prefer for(of/in) loops over .forEach() and whenever it is an option, for better readability and more intuitive await behaviour
+
+### Vue.js
+
+- prefer `ref` over `reactive`
+- prefer `watchEffect` over `watch`
 
 ## Continuous improvement/learning
 

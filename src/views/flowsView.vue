@@ -29,9 +29,6 @@ function addFlow() {
 
         <div v-for="(flow, flowIndex) in boothApp.flows" :key="flowIndex">
             <h2>Flow {{ flowIndex + 1 }}</h2>
-            <p>Entry: {{ flow.entryNode.name }}</p>
-            <p>Camera: {{ flow.cameraNode.name }}</p>
-            <p>Processing: {{ flow.processingNodesPipeline.map((node) => node.name).join(', ') || 'none' }}</p>
             <button type="button" @click="editFlow(flowIndex)">Edit flow</button>
         </div>
 
