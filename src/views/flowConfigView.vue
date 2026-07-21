@@ -14,7 +14,7 @@ const editedFlow: Ref<Partial<Flow>> = ref({
 });
 
 watchEffect(() => {
-    //@ts-expect-error we expect flowIndex to be undefined, it is ok in js
+    //@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
     editedFlow.value = boothApp.value.flows[props.flowIndex] ?? {processingNodesPipeline: []};
 });
 
