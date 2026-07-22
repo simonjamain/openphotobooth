@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, type Ref } from 'vue';
+import { computed, ref, watchEffect, toRaw, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
@@ -15,7 +15,7 @@ const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
 
 watchEffect(() => {
     //@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
-    editedFlowConfiguration.value = boothApp.value.flowConfigurations[parseInt(props.flowIndex)] ?? {processingNodesPipeline: []};
+    editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parseInt(props.flowIndex)])) ?? {processingNodesPipeline: []};
 });
 
 const flowIsInvalid = computed(() => {
@@ -47,7 +47,7 @@ function saveFlowConfiguration() {
                 <option
                     v-for="node in boothApp.registeredNodes.entryNodes"
                     :key="node.id"
-                    :value="node"
+                    :value="{id: node.id,configuration: {}}"
                 >
                     {{ node.name }}
                 </option>
@@ -58,7 +58,7 @@ function saveFlowConfiguration() {
                 <option
                     v-for="node in boothApp.registeredNodes.cameraNodes"
                     :key="node.id"
-                    :value="node"
+                    :value="{id: node.id,configuration: {}}"
                 >
                     {{ node.name }}
                 </option>
