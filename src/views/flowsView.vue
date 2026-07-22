@@ -25,9 +25,9 @@ function addFlow() {
 
         <button type="button" @click="addFlow">Add new flow</button>
 
-        <p v-if="boothApp.flows.length === 0">No flow configured yet.</p>
+        <p v-if="boothApp.flowConfigurations.length === 0">No flow configured yet.</p>
 
-        <div v-for="(flow, flowIndex) in boothApp.flows" :key="flowIndex">
+        <div v-for="(flow, flowIndex) in boothApp.flowConfigurations" :key="flowIndex">
             <h2>Flow {{ flowIndex + 1 }}</h2>
             <button type="button" @click="editFlow(flowIndex)">Edit flow</button>
         </div>

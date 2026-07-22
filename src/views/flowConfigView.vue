@@ -2,50 +2,51 @@
 import { computed, ref, watchEffect, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
-import type { Flow } from '@/core/types/Flow';
+import type { FlowConfiguration } from '@/core/types/Flow';
 
 const { boothApp } = useBoothApp();
 const router = useRouter();
 const props = defineProps<{
-    flowIndex?: number;
+    flowIndex?: string;
 }>();
 
-const editedFlow: Ref<Partial<Flow>> = ref({
+const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
 });
 
 watchEffect(() => {
     //@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
-    editedFlow.value = boothApp.value.flows[props.flowIndex] ?? {processingNodesPipeline: []};
+    editedFlowConfiguration.value = boothApp.value.flowConfigurations[parseInt(props.flowIndex)] ?? {processingNodesPipeline: []};
 });
 
 const flowIsInvalid = computed(() => {
-    return editedFlow.value.entryNode === undefined || editedFlow.value.cameraNode === undefined || editedFlow.value.processingNodesPipeline === undefined;
+    return editedFlowConfiguration.value.entryNode === undefined || editedFlowConfiguration.value.cameraNode === undefined || editedFlowConfiguration.value.processingNodesPipeline === undefined;
 });
-function saveFlow() {
+
+function saveFlowConfiguration() {
     if (flowIsInvalid.value) {
-        alert('Flow is not valid. Please make sure all required fields are filled.');
+        alert('FlowConfiguration is not valid. Please make sure all required fields are filled.');
         return;
     }
 
     if(props.flowIndex === undefined) {
-        const createdFlowIndex = boothApp.value.flows.push(editedFlow.value as Flow) - 1;
-        router.push({ name: 'flow-config', params: { flowIndex: createdFlowIndex } });
+        const createdFlowConfigurationIndex = boothApp.value.flowConfigurations.push(editedFlowConfiguration.value as FlowConfiguration) - 1;
+        router.push({ name: 'flow-config', params: { flowIndex: createdFlowConfigurationIndex } });
         return
     }
 
-    boothApp.value.flows[props.flowIndex] = editedFlow.value as Flow;
+    boothApp.value.flowConfigurations[parseInt(props.flowIndex)] = editedFlowConfiguration.value as FlowConfiguration;
 }
 </script>
 
 <template>
     <div>
-        <h1>{{ $props.flowIndex === undefined ? 'New Flow' : `Editing Flow ${$props.flowIndex}` }}</h1>
+        <h1>{{ $props.flowIndex === undefined ? 'New FlowConfiguration' : `Editing FlowConfiguration ${$props.flowIndex}` }}</h1>
         <div>
             <label for="entry-node-select">Entry node</label>
-            <select id="entry-node-select" v-model="editedFlow.entryNode">
+            <select id="entry-node-select" v-model="editedFlowConfiguration.entryNode">
                 <option
-                    v-for="(node, nodeIndex) in boothApp.registeredNodes.entryNodes"
-                    :key="nodeIndex"
+                    v-for="node in boothApp.registeredNodes.entryNodes"
+                    :key="node.id"
                     :value="node"
                 >
                     {{ node.name }}
@@ -53,10 +54,10 @@ function saveFlow() {
             </select>
 
             <label for="camera-node-select">Camera node</label>
-            <select id="camera-node-select" v-model="editedFlow.cameraNode">
+            <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
                 <option
-                    v-for="(node, nodeIndex) in boothApp.registeredNodes.cameraNodes"
-                    :key="nodeIndex"
+                    v-for="node in boothApp.registeredNodes.cameraNodes"
+                    :key="node.id"
                     :value="node"
                 >
                     {{ node.name }}
@@ -65,19 +66,19 @@ function saveFlow() {
 
             <p>Processing nodes</p>
             <ol>
-                <li v-for="(node, nodeIndex) in editedFlow.processingNodesPipeline ?? []" :key="nodeIndex">
-                    {{ node.name }}
-                    <button type="button" @click="editedFlow.processingNodesPipeline?.splice(nodeIndex, 1)">
+                <li v-for="(node, nodeIndex) in editedFlowConfiguration.processingNodesPipeline ?? []" :key="nodeIndex">
+                    {{ boothApp.registeredNodes.processingNodes[node.id]?.name }}
+                    <button type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
                         Remove
                     </button>
                 </li>
             </ol>
             <button v-for="(node, nodeIndex) in boothApp.registeredNodes.processingNodes" :key="nodeIndex"
-            @click="editedFlow.processingNodesPipeline = editedFlow.processingNodesPipeline ?? []; editedFlow.processingNodesPipeline.push(node)">
+            @click="editedFlowConfiguration.processingNodesPipeline = editedFlowConfiguration.processingNodesPipeline ?? []; editedFlowConfiguration.processingNodesPipeline.push({id: node.id,configuration: {}})">
                 Add : {{ node.name }}
             </button>
 
-            <button type="button" :disabled="flowIsInvalid" @click="saveFlow">Save flow</button>
+            <button type="button" :disabled="flowIsInvalid" @click="saveFlowConfiguration">Save flow</button>
             <p>
                 <RouterLink to="/flows">Back to flows</RouterLink>
             </p>

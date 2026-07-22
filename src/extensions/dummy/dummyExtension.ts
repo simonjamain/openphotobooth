@@ -8,8 +8,8 @@ import { dummyProcessingNode } from "./dummyProcessingNode";
 
 export const dummyExtension: Extension = {
     registerNodes(app) {
-        app.registeredNodes.entryNodes.push(dummyEntryNode);
-        app.registeredNodes.cameraNodes.push(dummyCameraNode);
-        app.registeredNodes.processingNodes.push(dummyProcessingNode);
+        app.registeredNodes.entryNodes[dummyEntryNode.id] = dummyEntryNode;
+        app.registeredNodes.cameraNodes[dummyCameraNode.id] = dummyCameraNode;
+        app.registeredNodes.processingNodes[dummyProcessingNode.id] = dummyProcessingNode;
     }
 };

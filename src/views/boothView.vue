@@ -1,29 +1,37 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, type Ref } from 'vue';
 import type { Flow } from '@/core/types/Flow';
-import { runPipeline } from '@/core/Flow';
+import { instanciateFlowFromConfiguration, runPipeline } from '@/core/Flow';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 
-const { boothApp: app } = useBoothApp();
+const { boothApp } = useBoothApp();
 
-const flow = computed<Flow | undefined>(() => app.value.flows[0]);
+const currentFlow:Ref<Flow|null> = ref(null);
 
 async function onPhotosTaken(images: ImageBitmap[]) {
-    if (flow.value === undefined) {
+    if (currentFlow.value === null) {
         return;
     }
 
-    await runPipeline(flow.value.processingNodesPipeline, images);
+    await runPipeline(currentFlow.value.processingNodesPipeline, images);
 }
 
 </script>
 <template>
     <div>
         <h1>Booth</h1>
-        <p v-if="flow === undefined">
-            No runnable flow available. Configure one in
+        <p v-if="boothApp.flowConfigurations.length === 0">
+            No runnable flow available. Add a new one
             <RouterLink to="/configure">Flow Configuration</RouterLink>.
         </p>
-        <component v-else :is="flow.entryNode.component" :cameraNode="flow.cameraNode" @photosTaken="onPhotosTaken" />
+        <div v-if="currentFlow === null">
+            choose a flow to run:
+            <ul>
+                <li v-for="(flowConfiguration, flowIndex) in boothApp.flowConfigurations" :key="flowIndex">
+                    <button @click="currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp)">Run flow {{ flowIndex }}</button>
+                </li>
+            </ul>
+        </div>
+        <component v-else :is="currentFlow.entryNode.component" :cameraNode="currentFlow.cameraNode" @photosTaken="onPhotosTaken" />
     </div>
 </template>
