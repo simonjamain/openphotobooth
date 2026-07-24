@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ApiCameraNodeConfiguration } from './apiCameraNodeConfiguration';
 
-const configuration = defineModel<ApiCameraNodeConfiguration['configuration']>({
+const configuration = defineModel<ApiCameraNodeConfiguration['configuration']>('configuration', {
   default: () => ({
     apiUrl: 'http://localhost:5513/'
   })

@@ -1,6 +1,8 @@
 import type { CameraNode } from "@/core/types/CameraNode";
+import { markRaw } from "vue";
 import z from "zod";
 import type { ApiCameraNodeConfiguration } from "./apiCameraNodeConfiguration";
+import apiCameraNodeConfigurationComponent from "./apiCameraNodeConfigurationComponent.vue";
 
 async function waitAndGetLastImageName(apiUrl: string): Promise<string> {
     //wait for 1 second, then try to get the last image name from the camera 10 times, with a 1 second delay between each try
@@ -29,9 +31,7 @@ export const apiCameraNode: CameraNode = {
         // check https://www.digicamcontrol.com/doc/userguide/web
         const captureApiUrl = new URL(this.configuration.apiUrl);
         captureApiUrl.searchParams.set("CMD", "Capture");
-        await fetch(captureApiUrl, {
-            method: "POST",
-        });
+        await fetch(captureApiUrl);
 
         const capturedImageName = await waitAndGetLastImageName(this.configuration.apiUrl);
 
@@ -42,5 +42,8 @@ export const apiCameraNode: CameraNode = {
         const imageBitmap = await createImageBitmap(blob);
         return [imageBitmap];
     },
-    configurationSchema: z.object({})
+    configurationSchema: z.object({
+        apiUrl: z.string().url()
+    }),
+    configurationComponent: markRaw(apiCameraNodeConfigurationComponent)
 };

@@ -12,5 +12,5 @@ export interface Node {
     id: string
     name: string
     configurationSchema: z.ZodType
-    configurationComponent?: Component<undefined,{configuration: NodeConfiguration['configuration']}>;
+    configurationComponent?: Component
 }

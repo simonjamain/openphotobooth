@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, toRaw, type Ref } from 'vue';
+import { computed, ref, watchEffect, toRaw, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
@@ -20,6 +20,19 @@ watchEffect(() => {
 
 const flowIsInvalid = computed(() => {
     return editedFlowConfiguration.value.entryNode === undefined || editedFlowConfiguration.value.cameraNode === undefined || editedFlowConfiguration.value.processingNodesPipeline === undefined;
+});
+
+const selectedCameraNode = computed(() => {
+    const selectedCameraNodeId = editedFlowConfiguration.value.cameraNode?.id;
+    if (selectedCameraNodeId === undefined) {
+        return undefined;
+    }
+
+    return boothApp.value.registeredNodes.cameraNodes[selectedCameraNodeId];
+});
+
+const selectedCameraNodeConfigurationComponent = computed<Component | undefined>(() => {
+    return selectedCameraNode.value?.configurationComponent as Component | undefined;
 });
 
 function saveFlowConfiguration() {
@@ -63,6 +76,12 @@ function saveFlowConfiguration() {
                     {{ node.name }}
                 </option>
             </select>
+
+            <component
+                v-if="selectedCameraNodeConfigurationComponent !== undefined && editedFlowConfiguration.cameraNode !== undefined"
+                :is="selectedCameraNodeConfigurationComponent"
+                v-model:configuration="editedFlowConfiguration.cameraNode.configuration"
+            />
 
             <p>Processing nodes</p>
             <ol>
