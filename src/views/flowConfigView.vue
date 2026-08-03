@@ -35,6 +35,10 @@ const selectedCameraNodeConfigurationComponent = computed<Component | undefined>
     return selectedCameraNode.value?.configurationComponent as Component | undefined;
 });
 
+function getSelectedProcessingNodeConfigurationComponent(nodeId: string) {
+    return boothApp.value.registeredNodes.processingNodes[nodeId]?.configurationComponent as Component | undefined;
+}
+
 function saveFlowConfiguration() {
     if (flowIsInvalid.value) {
         alert('FlowConfiguration is not valid. Please make sure all required fields are filled.');
@@ -87,6 +91,11 @@ function saveFlowConfiguration() {
             <ol>
                 <li v-for="(node, nodeIndex) in editedFlowConfiguration.processingNodesPipeline ?? []" :key="nodeIndex">
                     {{ boothApp.registeredNodes.processingNodes[node.id]?.name }}
+                    <component
+                        v-if="getSelectedProcessingNodeConfigurationComponent(node.id) !== undefined"
+                        :is="getSelectedProcessingNodeConfigurationComponent(node.id)"
+                        v-model:configuration="node.configuration"
+                    />
                     <button type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
                         Remove
                     </button>
