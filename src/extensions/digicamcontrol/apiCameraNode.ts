@@ -43,7 +43,7 @@ export const apiCameraNode: CameraNode = {
         return [imageBitmap];
     },
     configurationSchema: z.object({
-        apiUrl: z.string().url()
+        apiUrl: z.string()
     }),
     configurationComponent: markRaw(apiCameraNodeConfigurationComponent)
 };
