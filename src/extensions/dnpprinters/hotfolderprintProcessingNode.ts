@@ -1,6 +1,7 @@
 import type { ProcessingNode } from "@/core/types/ProcessingNode";
 import z from "zod";
 import hotfolderprintProcessingNodeConfigurationComponent from "./hotfolderprintProcessingNodeConfigurationComponent.vue";
+import { markRaw } from "vue";
 
 export const hotfolderprintProcessingNode: ProcessingNode = {
     id: "hotfolderprint.processingNode.print",
@@ -11,7 +12,7 @@ export const hotfolderprintProcessingNode: ProcessingNode = {
         return images;
     },
     configurationSchema: z.object({
-        outputFolderPath: z.string()
+        outputFolderDirectoryHandle: z.any().nullable()
     }),
-    configurationComponent: hotfolderprintProcessingNodeConfigurationComponent
+    configurationComponent: markRaw(hotfolderprintProcessingNodeConfigurationComponent)
 };

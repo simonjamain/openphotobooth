@@ -9,8 +9,10 @@ const configuration = defineModel<HotfolderprintProcessingNodeConfiguration['con
   })
 });
 
-async function selectOutputFolder(event: Event) {
-  const outputFolderHandle = await window.showDirectoryPicker();
+async function selectOutputFolder() {
+  const outputFolderHandle = await window.showDirectoryPicker({
+    mode: 'readwrite',
+  });
   configuration.value.outputFolderDirectoryHandle = outputFolderHandle;
 }
 
