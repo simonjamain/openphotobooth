@@ -114,7 +114,7 @@ function saveFlowConfiguration() {
                             <div class="processing-list__title-row">
                                 <strong>{{ boothApp.registeredNodes.processingNodes[node.id]?.name }}</strong>
                                 <button class="processing-list__remove" type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
-                                    po
+                                    🗑
                                 </button>
                             </div>
                             <component
