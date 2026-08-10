@@ -113,8 +113,8 @@ function saveFlowConfiguration() {
                         >
                             <div class="processing-list__title-row">
                                 <strong>{{ boothApp.registeredNodes.processingNodes[node.id]?.name }}</strong>
-                                <button type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
-                                    Remove
+                                <button class="processing-list__remove" type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
+                                    po
                                 </button>
                             </div>
                             <component
@@ -211,6 +211,22 @@ function saveFlowConfiguration() {
 
 .processing-list__empty {
     color: var(--color-text-soft);
+}
+
+.processing-list__remove {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--color-danger);
+    color: var(--color-danger-foreground);
+}
+
+.processing-list__remove:hover {
+    background: var(--color-danger-hover);
+}
+
+.processing-list__remove:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-danger) 70%, white);
 }
 
 .processing-node-palette {
