@@ -17,6 +17,20 @@ function editFlow(flowIndex: number) {
 function addFlow() {
     void router.push({ name: 'flow-config' });
 }
+
+function removeFlow(flowIndex: number) {
+    const flowName = boothApp.value.flowConfigurations[flowIndex]?.name
+
+    const confirmedMessage = flowName !== undefined && flowName !== ''
+        ? `Remove flow “${flowName}”?`
+        : `Remove this flow?`
+
+    if (!window.confirm(confirmedMessage)) {
+        return
+    }
+
+    boothApp.value.flowConfigurations.splice(flowIndex, 1)
+}
 </script>
 
 <template>
@@ -30,6 +44,7 @@ function addFlow() {
         <div v-for="(flow, flowIndex) in boothApp.flowConfigurations" :key="flowIndex">
             <h2>{{ flow.name }}</h2>
             <button type="button" @click="editFlow(flowIndex)">Edit flow</button>
+            <button type="button" class="remove-flow-button" @click="removeFlow(flowIndex)">🗑</button>
         </div>
 
         <p>
@@ -37,3 +52,11 @@ function addFlow() {
         </p>
     </div>
 </template>
+
+<style scoped>
+.remove-flow-button {
+    background: var(--color-danger);
+    color: var(--color-danger-foreground);
+    border-color: var(--color-danger);
+}
+</style>
