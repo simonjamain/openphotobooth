@@ -13,6 +13,6 @@ const configuration = defineModel<ApiCameraNodeConfiguration['configuration']>('
     For more information on how to set up the API, please refer to the <a href="https://www.digicamcontrol.com/doc/userguide/web" target="_blank">digiCamControl web interface documentation</a>
   </p>
   <label>
-    <input v-model="configuration.apiUrl" type="text" />
+    <input v-model="configuration.apiUrl" type="text" placeholder="http://127.0.0.1:5513" />
   </label>
 </template>

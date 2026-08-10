@@ -121,6 +121,7 @@ Agents will not try to exceed excpectations and will only implement the bare min
 - hexagonal architecture
 - prefer for(of/in) loops over .forEach() and whenever it is an option, for better readability and more intuitive await behaviour
 - don't use ; when not needed, but use it when it is needed
+- BEM for css
 
 ### Vue.js
 
