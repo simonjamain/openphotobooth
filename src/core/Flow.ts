@@ -42,6 +42,7 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
     }
 
     return {
+        name: flowConfiguration.name,
         entryNode: { ...entryNode, ...flowConfiguration.entryNode },
         cameraNode: { ...cameraNode, ...flowConfiguration.cameraNode },
         processingNodesPipeline,

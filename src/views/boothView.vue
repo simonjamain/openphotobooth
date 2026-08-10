@@ -18,20 +18,16 @@ async function onPhotosTaken(images: ImageBitmap[]) {
 
 </script>
 <template>
-    <div>
-        <h1>Booth</h1>
-        <p v-if="boothApp.flowConfigurations.length === 0">
+    <div v-if="boothApp.flowConfigurations.length === 0">
+        <p>
             No runnable flow available. Add a new one
             <RouterLink to="/configure">Flow Configuration</RouterLink>.
         </p>
-        <div v-if="currentFlow === null">
-            choose a flow to run:
-            <ul>
-                <li v-for="(flowConfiguration, flowIndex) in boothApp.flowConfigurations" :key="flowIndex">
-                    <button @click="currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp)">Run flow {{ flowIndex }}</button>
-                </li>
-            </ul>
-        </div>
-        <component v-else :is="currentFlow.entryNode.component" :cameraNode="currentFlow.cameraNode" @photosTaken="onPhotosTaken" />
     </div>
+    <section v-if="currentFlow === null">
+        <div v-for="(flowConfiguration, flowIndex) in boothApp.flowConfigurations" :key="flowIndex" @click="currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp)">
+
+        </div>
+    </section>
+    <component v-else :is="currentFlow.entryNode.component" :cameraNode="currentFlow.cameraNode" @photosTaken="onPhotosTaken" />
 </template>

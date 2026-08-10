@@ -11,15 +11,19 @@ const props = defineProps<{
 }>();
 
 const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
+    name: 'Untitled flow',
+    processingNodesPipeline: [],
 });
 
-watchEffect(() => {
-    //@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
-    editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parseInt(props.flowIndex)])) ?? {processingNodesPipeline: []};
-});
+//@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
+editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parseInt(props.flowIndex)])) ?? {processingNodesPipeline: []};
+
 
 const flowIsInvalid = computed(() => {
-    return editedFlowConfiguration.value.entryNode === undefined || editedFlowConfiguration.value.cameraNode === undefined || editedFlowConfiguration.value.processingNodesPipeline === undefined;
+    return editedFlowConfiguration.value.name?.trim() === ''
+        || editedFlowConfiguration.value.entryNode === undefined
+        || editedFlowConfiguration.value.cameraNode === undefined
+        || editedFlowConfiguration.value.processingNodesPipeline === undefined;
 });
 
 const selectedCameraNode = computed(() => {
@@ -58,7 +62,7 @@ function saveFlowConfiguration() {
 <template>
     <section class="flow-config">
         <header class="flow-config__header">
-            <h1>{{ $props.flowIndex === undefined ? 'New FlowConfiguration' : `Editing FlowConfiguration ${$props.flowIndex}` }}</h1>
+            <h1>{{ $props.flowIndex === undefined ? 'New Flow' : (editedFlowConfiguration.name ?? `Editing Flow ${$props.flowIndex}`) }}</h1>
             <p>
                 A flow is a chain: one <strong>entry node</strong> starts the photo capture, then
                 <strong>processing nodes</strong> run one after another.
@@ -66,6 +70,13 @@ function saveFlowConfiguration() {
         </header>
 
         <div class="flow-chain">
+            <article class="chain-node chain-node--entry">
+                <p class="chain-node__eyebrow">Flow details</p>
+                <h2>Name</h2>
+                <label for="flow-name-input">Give the flow a descriptive name</label>
+                <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" placeholder="Untitled flow" />
+            </article>
+
             <article class="chain-node chain-node--entry">
                 <p class="chain-node__eyebrow">Step 1</p>
                 <h2>Entry node</h2>
