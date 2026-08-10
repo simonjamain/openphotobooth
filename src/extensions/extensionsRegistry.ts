@@ -2,6 +2,7 @@ import type { App } from "@/core/types/App";
 import { dummyExtension } from "./dummy/dummyExtension";
 import { digicamcontrolExtension } from "./digicamcontrol/digicamcontrolExtension";
 import { dnpprintersExtension } from "./dnpprinters/dnpprintersExtension";
+import { overlayExtension } from "./overlay/overlayExtension";
 
 export function installAllExtensions(app: App) {
     for (const extension of extensionsRegistry) {
@@ -12,5 +13,6 @@ export function installAllExtensions(app: App) {
 export const extensionsRegistry = [
     dummyExtension,
     digicamcontrolExtension,
-    dnpprintersExtension
+    dnpprintersExtension,
+    overlayExtension
 ]

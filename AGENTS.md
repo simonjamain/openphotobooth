@@ -112,6 +112,40 @@ We like to keep things really simple with no unnecessary dependencies and just a
 
 Agents will not try to exceed excpectations and will only implement the bare minimum to ensure a correct workflow.
 
+## Extension authoring guide for AI agents
+
+When implementing a new extension, prefer the smallest possible change that fits the existing architecture.
+
+- Start from the closest existing example:
+  - use the dummy extension as the simplest reference for a minimal extension
+  - use the digicamcontrol extension for a camera node with configuration and a Vue configuration component
+  - use the dnpprinters extension for a processing node that uses browser APIs and file-system permissions
+- Create the smallest set of files required:
+  - an extension registration file such as [name]Extension.ts to register nodes in app.registeredNodes
+  - one or more node files such as [name]EntryNode.ts, [name]CameraNode.ts or [name]ProcessingNode.ts
+  - an optional configuration type file and an optional Vue configuration component if the node has settings
+- Follow the core contracts exactly:
+  - entry nodes expose a Vue component and emit photosTaken(images)
+  - camera nodes implement capture() and return ImageBitmap[]
+  - processing nodes implement process(images) and return ImageBitmap[]
+- Keep the implementation simple and browser-safe:
+  - use plain exported objects, not classes
+  - use zod schemas for any uncontrolled input
+  - prefer serializable configuration over complex objects
+  - use markRaw for Vue components and defineModel for configuration component state
+  - for browser APIs such as File System Access or fetch, handle errors gracefully and keep the UI understandable
+- Register the extension in src/extensions/extensionsRegistry.ts so it is loaded automatically
+- Keep node ids namespaced with the vendor prefix, for example: vendor.entryNode.singlePhoto, vendor.cameraNode.api or vendor.processingNode.print
+
+A good default workflow is:
+1. copy the closest existing extension
+2. rename the exported symbols and ids
+3. adjust the configuration schema and component
+4. register the extension
+5. run the type check
+
+Detailed implementation notes and a lightweight checklist live in src/extensions/README.md.
+
 ## coding style
 
 - serializable typescript interfaces and bindable functions over classes
