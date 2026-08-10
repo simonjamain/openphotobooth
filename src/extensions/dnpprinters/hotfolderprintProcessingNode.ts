@@ -14,7 +14,7 @@ export const hotfolderprintProcessingNode: ProcessingNode = {
             console.error("hotfolderprintProcessingNode: outputFolderDirectoryHandle is null");
             throw new Error("outputFolderDirectoryHandle is null");
         }
-
+        await this.configuration.outputFolderDirectoryHandle.requestPermission({ mode: "readwrite" })
         for(const image of images) {
             console.debug(`hotfolderprintProcessingNode: image width: ${image.width}, height: ${image.height}`);
             const filename = `image_${Date.now()}.jpg`;
