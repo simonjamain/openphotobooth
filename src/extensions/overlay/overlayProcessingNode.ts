@@ -10,29 +10,6 @@ async function dataUrlToImageBitmap(dataUrl: string): Promise<ImageBitmap> {
     return createImageBitmap(blob);
 }
 
-async function imageBitmapToPngBlob(image: ImageBitmap): Promise<Blob> {
-    const canvas = document.createElement("canvas");
-    canvas.width = image.width;
-    canvas.height = image.height;
-    const context = canvas.getContext("2d");
-
-    if (context === null) {
-        throw new Error("Unable to create a drawing context for the overlay output");
-    }
-
-    context.drawImage(image, 0, 0);
-
-    return new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob === null) {
-                reject(new Error("Unable to export the overlay result as an image"));
-                return;
-            }
-            resolve(blob);
-        }, "image/png");
-    });
-}
-
 export const overlayProcessingNode: ProcessingNode = {
     id: "overlay.processingNode.overlay",
     name: "Overlay processing node",
@@ -45,9 +22,7 @@ export const overlayProcessingNode: ProcessingNode = {
         }
 
         const overlayImage = await dataUrlToImageBitmap(overlayImageDataUrl);
-        const canvas = document.createElement("canvas");
-        canvas.width = overlayImage.width;
-        canvas.height = overlayImage.height;
+        const canvas = new OffscreenCanvas(overlayImage.width, overlayImage.height);
 
         const context = canvas.getContext("2d");
         if (context === null) {
@@ -56,16 +31,18 @@ export const overlayProcessingNode: ProcessingNode = {
 
         for (let index = 0; index < zones.length; index += 1) {
             const zone = zones[index];
+
+            // if the number of images is less than the number of zones, we will repeat the images in a loop
             const sourceImage = images[index % images.length];
 
             if (zone === undefined || sourceImage === undefined) {
                 continue;
             }
 
-            const destinationX = Math.round(zone.x * overlayImage.width);
-            const destinationY = Math.round(zone.y * overlayImage.height);
-            const destinationWidth = Math.max(1, Math.round(zone.width * overlayImage.width));
-            const destinationHeight = Math.max(1, Math.round(zone.height * overlayImage.height));
+            const destinationX = zone.x * overlayImage.width;
+            const destinationY = zone.y * overlayImage.height;
+            const destinationWidth = Math.max(1, zone.width * overlayImage.width);
+            const destinationHeight = Math.max(1, zone.height * overlayImage.height);
 
             const sourceAspectRatio = sourceImage.width / sourceImage.height;
             const targetAspectRatio = destinationWidth / destinationHeight;
@@ -94,15 +71,7 @@ export const overlayProcessingNode: ProcessingNode = {
 
         context.drawImage(overlayImage, 0, 0);
 
-        const outputBlob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob((blob) => {
-                if (blob === null) {
-                    reject(new Error("Unable to export the overlay composition"));
-                    return;
-                }
-                resolve(blob);
-            }, "image/png");
-        });
+        const outputBlob = await canvas.convertToBlob({ type: "image/png" });
 
         const outputImage = await createImageBitmap(outputBlob);
         return [outputImage];
