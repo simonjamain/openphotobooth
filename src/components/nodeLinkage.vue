@@ -14,7 +14,13 @@
 </template>
 <style scoped>
 .linkage_fill {
-    background: var(--color-surface);
+    background-color: var(--color-surface);
+    background-image: linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--color-primary) 10%, transparent),
+        transparent
+    );
     display: flex;
     flex-direction: row;
     margin: auto;
@@ -22,6 +28,10 @@
     height: calc(var(--space-6)*1.6);
     position: relative;
     z-index: 1;
+    overflow: hidden;
+    background-size: 100% 240%;
+    background-position: 0 170%;
+    animation: linkage-flow-down 3.2s infinite;
 }
 .linkage_center {
     flex-grow: 1;
@@ -41,5 +51,15 @@
     border-right: none;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+}
+
+@keyframes linkage-flow-down {
+    from {
+        background-position: 0 170%;
+    }
+
+    to {
+        background-position: 0 -170%;
+    }
 }
 </style>
