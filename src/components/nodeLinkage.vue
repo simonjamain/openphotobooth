@@ -2,11 +2,10 @@
     <div class="linkage_fill">
         <div class="linkage_outline linkage_outline--left">
         </div>
-        <div class="linkage_center"></div>
-        <!-- <svg style="fill: var(--color-primary);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+        <svg class="linkage_center" style="fill: var(--color-border);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
             <path
                 d="M297.4 598.6C309.9 611.1 330.2 611.1 342.7 598.6L470.7 470.6C479.9 461.4 482.6 447.7 477.6 435.7C472.6 423.7 460.9 416 448 416L384 416L384 80C384 53.5 362.5 32 336 32L304 32C277.5 32 256 53.5 256 80L256 416L192 416C179.1 416 167.4 423.8 162.4 435.8C157.4 447.8 160.2 461.5 169.4 470.6L297.4 598.6z" />
-        </svg> -->
+        </svg>
         <div class="linkage_outline linkage_outline--right">  
         </div>
     </div>
@@ -15,12 +14,6 @@
 <style scoped>
 .linkage_fill {
     background-color: var(--color-surface);
-    background-image: linear-gradient(
-        to bottom,
-        transparent,
-        color-mix(in srgb, var(--color-primary) 10%, transparent),
-        transparent
-    );
     display: flex;
     flex-direction: row;
     margin: auto;
@@ -28,10 +21,6 @@
     height: calc(var(--space-6)*1.6);
     position: relative;
     z-index: 1;
-    overflow: hidden;
-    background-size: 100% 240%;
-    background-position: 0 170%;
-    animation: linkage-flow-down 3.2s infinite;
 }
 .linkage_center {
     flex-grow: 1;
@@ -53,13 +42,4 @@
     border-bottom-right-radius: 0;
 }
 
-@keyframes linkage-flow-down {
-    from {
-        background-position: 0 170%;
-    }
-
-    to {
-        background-position: 0 -170%;
-    }
-}
 </style>
