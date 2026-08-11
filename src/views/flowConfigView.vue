@@ -90,6 +90,7 @@ function saveFlowConfiguration() {
                 <label for="flow-name-input">Give the flow a descriptive name</label>
                 <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" placeholder="Untitled flow" />
             </article>
+                        
 
             <article class="chain-node chain-node--entry">
                 <p class="chain-node__eyebrow">Step 1</p>
@@ -113,7 +114,7 @@ function saveFlowConfiguration() {
                     />
                 </div>
                 
-
+<node-linkage />
                 <div class="processing-list__item">
                     <label for="camera-node-select">Camera node used by the entry</label>
                     <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
