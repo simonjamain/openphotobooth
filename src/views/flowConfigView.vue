@@ -84,7 +84,7 @@ function saveFlowConfiguration() {
         </header>
 
         <div class="flow-chain">
-            <article class="chain-node chain-node--entry">
+            <article>
                 <p class="chain-node__eyebrow">Flow details</p>
                 <h2>Name</h2>
                 <label for="flow-name-input">Give the flow a descriptive name</label>
@@ -92,7 +92,7 @@ function saveFlowConfiguration() {
             </article>
                         
 
-            <article class="chain-node chain-node--entry">
+            <article>
                 <p class="chain-node__eyebrow">Step 1</p>
                 <h2>Entry node</h2>
                 <div class="processing-list__item">
@@ -113,8 +113,7 @@ function saveFlowConfiguration() {
                         v-model:configuration="editedFlowConfiguration.entryNode.configuration"
                     />
                 </div>
-                
-<node-linkage />
+                <node-linkage />
                 <div class="processing-list__item">
                     <label for="camera-node-select">Camera node used by the entry</label>
                     <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
@@ -134,7 +133,7 @@ function saveFlowConfiguration() {
                     />
                 </div>
             </article>
-            <article class="chain-node chain-node--processing">
+            <article>
                 <p class="chain-node__eyebrow">Step 2</p>
                 <h2>Processing chain</h2>
 
@@ -143,7 +142,7 @@ function saveFlowConfiguration() {
                         v-for="(node, nodeIndex) in editedFlowConfiguration.processingNodesPipeline ?? []"
                         :key="nodeIndex">
 
-                        <node-linkage v-if="nodeIndex > 0" />
+                        <node-linkage v-if="nodeIndex > 0" :displayArrow="true" />
 
                         <li
                             class="processing-list__item"
