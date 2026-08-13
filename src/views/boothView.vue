@@ -38,7 +38,6 @@ async function onPhotosTaken(images: ImageBitmap[]) {
         v-else
         :is="currentFlow.entryNode.component"
         :cameraNode="currentFlow.cameraNode"
-        :configuration="currentFlow.entryNode.configuration"
         @photosTaken="onPhotosTaken"
     />
 </template>

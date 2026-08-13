@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  displayArrow: boolean,
+  displayArrow?: boolean,
 }>()
 </script>
 <template>

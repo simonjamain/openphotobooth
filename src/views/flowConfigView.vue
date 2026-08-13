@@ -3,6 +3,7 @@ import { computed, ref, toRaw, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
+import type { NodeConfiguration } from '@/core/types/Node';
 import nodeLinkage from '@/components/nodeLinkage.vue';
 
 const { boothApp } = useBoothApp();
@@ -16,8 +17,15 @@ const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
     processingNodesPipeline: [],
 });
 
-//@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
-editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parseInt(props.flowIndex)])) ?? {processingNodesPipeline: []};
+const parsedFlowIndex = props.flowIndex === undefined
+    ? undefined
+    : Number.parseInt(props.flowIndex, 10);
+
+if (parsedFlowIndex !== undefined && Number.isFinite(parsedFlowIndex)) {
+    editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parsedFlowIndex])) ?? {
+        processingNodesPipeline: [],
+    };
+}
 
 
 const flowIsInvalid = computed(() => {
@@ -53,8 +61,71 @@ const selectedEntryNodeConfigurationComponent = computed<Component | undefined>(
     return selectedEntryNode.value?.configurationComponent as Component | undefined;
 });
 
-function getSelectedProcessingNodeConfigurationComponent(nodeId: string) {
-    return boothApp.value.registeredNodes.processingNodes[nodeId]?.configurationComponent as Component | undefined;
+const selectedEntryNodeId = computed<string>({
+    get() {
+        return editedFlowConfiguration.value.entryNode?.id ?? '';
+    },
+    set(nodeId: string) {
+        if (nodeId === '') {
+            editedFlowConfiguration.value.entryNode = undefined;
+            return;
+        }
+
+        if (editedFlowConfiguration.value.entryNode?.id === nodeId) {
+            return;
+        }
+
+        editedFlowConfiguration.value.entryNode = {
+            id: nodeId,
+            configuration: {},
+        } as NodeConfiguration;
+    },
+});
+
+const selectedCameraNodeId = computed<string>({
+    get() {
+        return editedFlowConfiguration.value.cameraNode?.id ?? '';
+    },
+    set(nodeId: string) {
+        if (nodeId === '') {
+            editedFlowConfiguration.value.cameraNode = undefined;
+            return;
+        }
+
+        if (editedFlowConfiguration.value.cameraNode?.id === nodeId) {
+            return;
+        }
+
+        editedFlowConfiguration.value.cameraNode = {
+            id: nodeId,
+            configuration: {},
+        } as NodeConfiguration;
+    },
+});
+
+const processingNodesForDisplay = computed(() => {
+    return (editedFlowConfiguration.value.processingNodesPipeline ?? []).map((node, nodeIndex) => {
+        const registeredNode = boothApp.value.registeredNodes.processingNodes[node.id];
+
+        return {
+            node,
+            nodeIndex,
+            name: registeredNode?.name ?? node.id,
+            configurationComponent: registeredNode?.configurationComponent as Component | undefined,
+        };
+    });
+});
+
+function addProcessingNode(nodeId: string) {
+    editedFlowConfiguration.value.processingNodesPipeline = editedFlowConfiguration.value.processingNodesPipeline ?? [];
+    editedFlowConfiguration.value.processingNodesPipeline.push({
+        id: nodeId,
+        configuration: {},
+    });
+}
+
+function removeProcessingNode(nodeIndex: number) {
+    editedFlowConfiguration.value.processingNodesPipeline?.splice(nodeIndex, 1);
 }
 
 function saveFlowConfiguration() {
@@ -97,11 +168,12 @@ function saveFlowConfiguration() {
                 <h2>Entry node</h2>
                 <div class="processing-list__item">
                     <label for="entry-node-select">Choose how the flow starts</label>
-                    <select id="entry-node-select" v-model="editedFlowConfiguration.entryNode">
+                    <select id="entry-node-select" v-model="selectedEntryNodeId">
+                        <option disabled value="">Select an entry node</option>
                         <option
                             v-for="node in boothApp.registeredNodes.entryNodes"
                             :key="node.id"
-                            :value="{id: node.id,configuration: {}}"
+                            :value="node.id"
                         >
                             {{ node.name }}
                         </option>
@@ -116,11 +188,12 @@ function saveFlowConfiguration() {
                 <node-linkage />
                 <div class="processing-list__item">
                     <label for="camera-node-select">How to take photos</label>
-                    <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
+                    <select id="camera-node-select" v-model="selectedCameraNodeId">
+                        <option disabled value="">Select a camera node</option>
                         <option
                             v-for="node in boothApp.registeredNodes.cameraNodes"
                             :key="node.id"
-                            :value="{id: node.id,configuration: {}}"
+                            :value="node.id"
                         >
                             {{ node.name }}
                         </option>
@@ -137,10 +210,10 @@ function saveFlowConfiguration() {
                 <p class="chain-node__eyebrow">Step 2</p>
                 <h2>Processing chain</h2>
 
-                <ol class="processing-list" v-if="(editedFlowConfiguration.processingNodesPipeline ?? []).length > 0">
+                <ol class="processing-list" v-if="processingNodesForDisplay.length > 0">
                     <template 
-                        v-for="(node, nodeIndex) in editedFlowConfiguration.processingNodesPipeline ?? []"
-                        :key="nodeIndex">
+                        v-for="{ node, nodeIndex, name, configurationComponent } in processingNodesForDisplay"
+                        :key="`${node.id}-${nodeIndex}`">
 
                         <node-linkage v-if="nodeIndex > 0" :displayArrow="true" />
 
@@ -148,14 +221,14 @@ function saveFlowConfiguration() {
                             class="processing-list__item"
                         >
                             <div class="processing-list__title-row">
-                                <strong>{{ boothApp.registeredNodes.processingNodes[node.id]?.name }}</strong>
-                                <button class="processing-list__remove" type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
+                                <strong>{{ name }}</strong>
+                                <button class="processing-list__remove" type="button" @click="removeProcessingNode(nodeIndex)">
                                     🗑
                                 </button>
                             </div>
                             <component
-                                v-if="getSelectedProcessingNodeConfigurationComponent(node.id) !== undefined"
-                                :is="getSelectedProcessingNodeConfigurationComponent(node.id)"
+                                v-if="configurationComponent !== undefined"
+                                :is="configurationComponent"
                                 v-model:configuration="node.configuration"
                             />
                         </li>
@@ -166,10 +239,10 @@ function saveFlowConfiguration() {
 
                 <div class="processing-node-palette">
                     <button
-                        v-for="(node, nodeIndex) in boothApp.registeredNodes.processingNodes"
-                        :key="nodeIndex"
+                        v-for="node in boothApp.registeredNodes.processingNodes"
+                        :key="node.id"
                         type="button"
-                        @click="editedFlowConfiguration.processingNodesPipeline = editedFlowConfiguration.processingNodesPipeline ?? []; editedFlowConfiguration.processingNodesPipeline.push({id: node.id,configuration: {}})"
+                        @click="addProcessingNode(node.id)"
                     >
                         Add {{ node.name }}
                     </button>
