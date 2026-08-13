@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import type { CameraNode } from "@/core/types/CameraNode";
 import type { OverlayEntryNodeConfiguration } from "./overlayEntryNodeConfiguration";
 
@@ -23,27 +24,21 @@ async function takeSequence() {
   const delayMs = Math.max(0, Math.floor(props.configuration.delayMs ?? 1000));
 
   for (let index = 0; index < photoCount; index += 1) {
+      await wait(delayMs);
     const photo = await props.cameraNode.capture();
     capturedImages.push(...photo);
-
-    if (index < photoCount - 1) {
-      await wait(delayMs);
-    }
   }
 
   emit("photosTaken", capturedImages);
 }
+
+onMounted(() => {
+  void takeSequence();
+});
 </script>
 
 <template>
-  <div class="overlay-entry-node">
-    <button @click="takeSequence">Take sequence</button>
+  <div>
+    smile !
   </div>
 </template>
-
-<style scoped>
-.overlay-entry-node {
-  display: flex;
-  align-items: flex-start;
-}
-</style>

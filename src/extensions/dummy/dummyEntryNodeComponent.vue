@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import type { CameraNode } from '@/core/types/CameraNode';
 
 const props = defineProps<{
@@ -14,7 +15,11 @@ async function takePhoto() {
     emit('photosTaken', await props.cameraNode.capture());
 }
 
+onMounted(() => {
+  void takePhoto();
+});
+
 </script>
 <template>
-    <button @click="takePhoto()">Take photo</button>
+    <div>smile !</div>
 </template>
