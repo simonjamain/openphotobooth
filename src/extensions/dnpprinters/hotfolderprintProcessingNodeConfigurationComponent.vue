@@ -15,7 +15,7 @@ const permissionsNeeded = ref(false);
 async function updatePermissionState() {
   const outputFolderHandle = configuration.value.outputFolderDirectoryHandle;
 
-  if (outputFolderHandle === null) {
+  if (outputFolderHandle === null || undefined) {
     permissionsNeeded.value = false;
     return;
   }

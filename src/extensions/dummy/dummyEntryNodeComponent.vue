@@ -2,7 +2,8 @@
 import type { CameraNode } from '@/core/types/CameraNode';
 
 const props = defineProps<{
-  cameraNode: CameraNode
+  cameraNode: CameraNode,
+  configuration: Record<string, unknown>
 }>()
 
 const emit = defineEmits<{

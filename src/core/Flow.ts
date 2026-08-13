@@ -1,4 +1,3 @@
-import { toRaw } from "vue";
 import type { App } from "./types/App";
 import type { Flow, FlowConfiguration } from "./types/Flow";
 import type { ProcessingNode } from "./types/ProcessingNode";
@@ -41,6 +40,8 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
         processingNodesPipeline.push({ ...processingNode, ...nodeConfiguration });
     }
 
+
+    // we bind the node configurations to the registered nodes the their methods can access the configuration through `this.configuration`
     return {
         name: flowConfiguration.name,
         entryNode: { ...entryNode, ...flowConfiguration.entryNode },

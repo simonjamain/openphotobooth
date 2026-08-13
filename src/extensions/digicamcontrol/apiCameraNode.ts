@@ -14,6 +14,7 @@ async function waitAndGetLastImageName(apiUrl: string): Promise<string> {
             const imageName = await (await fetch(getLastImageNameUrl)).text()
             // api send "-" if image is still processing
             if(imageName === "-") {
+                console.log("Image is still processing, please try again later.")
                 throw new Error("Image is still processing, please try again later.")
             }
             return imageName;

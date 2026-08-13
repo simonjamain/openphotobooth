@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, toRaw, type Component, type Ref } from 'vue';
+import { computed, ref, toRaw, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
+import type { NodeConfiguration } from '@/core/types/Node';
+import nodeLinkage from '@/components/nodeLinkage.vue';
 
 const { boothApp } = useBoothApp();
 const router = useRouter();
@@ -15,8 +17,15 @@ const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
     processingNodesPipeline: [],
 });
 
-//@ts-expect-error we expect flowIndex to be undefined, and it is ok in js to index with undefined
-editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parseInt(props.flowIndex)])) ?? {processingNodesPipeline: []};
+const parsedFlowIndex = props.flowIndex === undefined
+    ? undefined
+    : Number.parseInt(props.flowIndex, 10);
+
+if (parsedFlowIndex !== undefined && Number.isFinite(parsedFlowIndex)) {
+    editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parsedFlowIndex])) ?? {
+        processingNodesPipeline: [],
+    };
+}
 
 
 const flowIsInvalid = computed(() => {
@@ -39,8 +48,84 @@ const selectedCameraNodeConfigurationComponent = computed<Component | undefined>
     return selectedCameraNode.value?.configurationComponent as Component | undefined;
 });
 
-function getSelectedProcessingNodeConfigurationComponent(nodeId: string) {
-    return boothApp.value.registeredNodes.processingNodes[nodeId]?.configurationComponent as Component | undefined;
+const selectedEntryNode = computed(() => {
+    const selectedEntryNodeId = editedFlowConfiguration.value.entryNode?.id;
+    if (selectedEntryNodeId === undefined) {
+        return undefined;
+    }
+
+    return boothApp.value.registeredNodes.entryNodes[selectedEntryNodeId];
+});
+
+const selectedEntryNodeConfigurationComponent = computed<Component | undefined>(() => {
+    return selectedEntryNode.value?.configurationComponent as Component | undefined;
+});
+
+const selectedEntryNodeId = computed<string>({
+    get() {
+        return editedFlowConfiguration.value.entryNode?.id ?? '';
+    },
+    set(nodeId: string) {
+        if (nodeId === '') {
+            editedFlowConfiguration.value.entryNode = undefined;
+            return;
+        }
+
+        if (editedFlowConfiguration.value.entryNode?.id === nodeId) {
+            return;
+        }
+
+        editedFlowConfiguration.value.entryNode = {
+            id: nodeId,
+            configuration: {},
+        } as NodeConfiguration;
+    },
+});
+
+const selectedCameraNodeId = computed<string>({
+    get() {
+        return editedFlowConfiguration.value.cameraNode?.id ?? '';
+    },
+    set(nodeId: string) {
+        if (nodeId === '') {
+            editedFlowConfiguration.value.cameraNode = undefined;
+            return;
+        }
+
+        if (editedFlowConfiguration.value.cameraNode?.id === nodeId) {
+            return;
+        }
+
+        editedFlowConfiguration.value.cameraNode = {
+            id: nodeId,
+            configuration: {},
+        } as NodeConfiguration;
+    },
+});
+
+const processingNodesForDisplay = computed(() => {
+    return (editedFlowConfiguration.value.processingNodesPipeline ?? []).map((node, nodeIndex) => {
+        const registeredNode = boothApp.value.registeredNodes.processingNodes[node.id];
+
+        return {
+            node,
+            nodeIndex,
+            name: registeredNode?.name ?? node.id,
+            configurationComponent: registeredNode?.configurationComponent as Component | undefined,
+        };
+    });
+});
+
+function addProcessingNode(nodeId: string) {
+    editedFlowConfiguration.value.processingNodesPipeline = editedFlowConfiguration.value.processingNodesPipeline ?? [];
+    editedFlowConfiguration.value.processingNodesPipeline.push({
+        id: nodeId,
+        configuration: {},
+    });
+}
+
+function removeProcessingNode(nodeIndex: number) {
+    editedFlowConfiguration.value.processingNodesPipeline?.splice(nodeIndex, 1);
 }
 
 function saveFlowConfiguration() {
@@ -70,67 +155,80 @@ function saveFlowConfiguration() {
         </header>
 
         <div class="flow-chain">
-            <article class="chain-node chain-node--entry">
+            <article>
                 <p class="chain-node__eyebrow">Flow details</p>
                 <h2>Name</h2>
                 <label for="flow-name-input">Give the flow a descriptive name</label>
                 <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" placeholder="Untitled flow" />
             </article>
+                        
 
-            <article class="chain-node chain-node--entry">
+            <article>
                 <p class="chain-node__eyebrow">Step 1</p>
                 <h2>Entry node</h2>
-                <label for="entry-node-select">Choose how the flow starts</label>
-                <select id="entry-node-select" v-model="editedFlowConfiguration.entryNode">
-                    <option
-                        v-for="node in boothApp.registeredNodes.entryNodes"
-                        :key="node.id"
-                        :value="{id: node.id,configuration: {}}"
-                    >
-                        {{ node.name }}
-                    </option>
-                </select>
+                <div class="processing-list__item">
+                    <label for="entry-node-select">Choose how the flow starts</label>
+                    <select id="entry-node-select" v-model="selectedEntryNodeId">
+                        <option disabled value="">Select an entry node</option>
+                        <option
+                            v-for="node in boothApp.registeredNodes.entryNodes"
+                            :key="node.id"
+                            :value="node.id"
+                        >
+                            {{ node.name }}
+                        </option>
+                    </select>
 
-                <label for="camera-node-select">Camera node used by the entry</label>
-                <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
-                    <option
-                        v-for="node in boothApp.registeredNodes.cameraNodes"
-                        :key="node.id"
-                        :value="{id: node.id,configuration: {}}"
-                    >
-                        {{ node.name }}
-                    </option>
-                </select>
+                    <component
+                        v-if="selectedEntryNodeConfigurationComponent !== undefined && editedFlowConfiguration.entryNode !== undefined"
+                        :is="selectedEntryNodeConfigurationComponent"
+                        v-model:configuration="editedFlowConfiguration.entryNode.configuration"
+                    />
+                </div>
+                <node-linkage />
+                <div class="processing-list__item">
+                    <label for="camera-node-select">How to take photos</label>
+                    <select id="camera-node-select" v-model="selectedCameraNodeId">
+                        <option disabled value="">Select a camera node</option>
+                        <option
+                            v-for="node in boothApp.registeredNodes.cameraNodes"
+                            :key="node.id"
+                            :value="node.id"
+                        >
+                            {{ node.name }}
+                        </option>
+                    </select>
 
-                <component
-                    v-if="selectedCameraNodeConfigurationComponent !== undefined && editedFlowConfiguration.cameraNode !== undefined"
-                    :is="selectedCameraNodeConfigurationComponent"
-                    v-model:configuration="editedFlowConfiguration.cameraNode.configuration"
-                />
+                    <component
+                        v-if="selectedCameraNodeConfigurationComponent !== undefined && editedFlowConfiguration.cameraNode !== undefined"
+                        :is="selectedCameraNodeConfigurationComponent"
+                        v-model:configuration="editedFlowConfiguration.cameraNode.configuration"
+                    />
+                </div>
             </article>
-            <article class="chain-node chain-node--processing">
+            <article>
                 <p class="chain-node__eyebrow">Step 2</p>
                 <h2>Processing chain</h2>
 
-                <ol class="processing-list" v-if="(editedFlowConfiguration.processingNodesPipeline ?? []).length > 0">
+                <ol class="processing-list" v-if="processingNodesForDisplay.length > 0">
                     <template 
-                        v-for="(node, nodeIndex) in editedFlowConfiguration.processingNodesPipeline ?? []"
-                        :key="nodeIndex">
-                        <p style="text-align:center" v-if="nodeIndex > 0">
-                            <svg style="width: 3em;fill: var(--color-primary);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M297.4 598.6C309.9 611.1 330.2 611.1 342.7 598.6L470.7 470.6C479.9 461.4 482.6 447.7 477.6 435.7C472.6 423.7 460.9 416 448 416L384 416L384 80C384 53.5 362.5 32 336 32L304 32C277.5 32 256 53.5 256 80L256 416L192 416C179.1 416 167.4 423.8 162.4 435.8C157.4 447.8 160.2 461.5 169.4 470.6L297.4 598.6z"/></svg>
-                        </p>
+                        v-for="{ node, nodeIndex, name, configurationComponent } in processingNodesForDisplay"
+                        :key="`${node.id}-${nodeIndex}`">
+
+                        <node-linkage v-if="nodeIndex > 0" :displayArrow="true" />
+
                         <li
                             class="processing-list__item"
                         >
                             <div class="processing-list__title-row">
-                                <strong>{{ boothApp.registeredNodes.processingNodes[node.id]?.name }}</strong>
-                                <button class="processing-list__remove" type="button" @click="editedFlowConfiguration.processingNodesPipeline?.splice(nodeIndex, 1)">
+                                <strong>{{ name }}</strong>
+                                <button class="processing-list__remove" type="button" @click="removeProcessingNode(nodeIndex)">
                                     🗑
                                 </button>
                             </div>
                             <component
-                                v-if="getSelectedProcessingNodeConfigurationComponent(node.id) !== undefined"
-                                :is="getSelectedProcessingNodeConfigurationComponent(node.id)"
+                                v-if="configurationComponent !== undefined"
+                                :is="configurationComponent"
                                 v-model:configuration="node.configuration"
                             />
                         </li>
@@ -141,10 +239,10 @@ function saveFlowConfiguration() {
 
                 <div class="processing-node-palette">
                     <button
-                        v-for="(node, nodeIndex) in boothApp.registeredNodes.processingNodes"
-                        :key="nodeIndex"
+                        v-for="node in boothApp.registeredNodes.processingNodes"
+                        :key="node.id"
                         type="button"
-                        @click="editedFlowConfiguration.processingNodesPipeline = editedFlowConfiguration.processingNodesPipeline ?? []; editedFlowConfiguration.processingNodesPipeline.push({id: node.id,configuration: {}})"
+                        @click="addProcessingNode(node.id)"
                     >
                         Add {{ node.name }}
                     </button>
@@ -209,7 +307,8 @@ function saveFlowConfiguration() {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     padding: var(--space-3);
-    margin-bottom: var(--space-3);
+    margin-top: -1px;
+    margin-bottom: -1px;
 }
 
 .processing-list__title-row {

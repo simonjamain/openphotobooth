@@ -34,7 +34,12 @@ async function onPhotosTaken(images: ImageBitmap[]) {
             <h2>{{ flowConfiguration.name }}</h2>
         </div>
     </section>
-    <component v-else :is="currentFlow.entryNode.component" :cameraNode="currentFlow.cameraNode" @photosTaken="onPhotosTaken" />
+    <component
+        v-else
+        :is="currentFlow.entryNode.component"
+        :cameraNode="currentFlow.cameraNode"
+        @photosTaken="onPhotosTaken"
+    />
 </template>
 
 <style scoped>
