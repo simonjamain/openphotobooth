@@ -129,6 +129,9 @@ function getZoneStyle(zone: { x: number; y: number; width: number; height: numbe
 
 <template>
   <div class="overlay-config">
+    <p>This node allows you to put an overlay on the photos taken by the booth. This is useful for adding branding or decorative elements.</p>
+    <p>Note that the overlay will be applied on top of the photos, so it has to leave transparent areas.</p>
+    <p>If your entry node doesn't supply as many photos as the number of areas you have drawn, it will recycle between photos until all areas are covered. For example this allows you to make sheets of the same photo.</p>
     <p>
       Upload a PNG template and draw the zones where captured images should appear.
     </p>

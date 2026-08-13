@@ -115,7 +115,7 @@ function saveFlowConfiguration() {
                 </div>
                 <node-linkage />
                 <div class="processing-list__item">
-                    <label for="camera-node-select">Camera node used by the entry</label>
+                    <label for="camera-node-select">How to take photos</label>
                     <select id="camera-node-select" v-model="editedFlowConfiguration.cameraNode">
                         <option
                             v-for="node in boothApp.registeredNodes.cameraNodes"

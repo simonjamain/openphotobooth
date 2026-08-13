@@ -9,6 +9,7 @@ const configuration = defineModel<ApiCameraNodeConfiguration['configuration']>('
 
 </script>
 <template>
+  <p>This node allows you to take pictures with a DSLR using the digiCamControl API.</p>
   <p>
     For more information on how to set up the API, please refer to the <a href="https://www.digicamcontrol.com/doc/userguide/web" target="_blank">digiCamControl web interface documentation</a>
   </p>
