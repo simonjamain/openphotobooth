@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref, type Ref } from 'vue';
 import type { Flow } from '@/core/types/Flow';
 import { instanciateFlowFromConfiguration, runPipeline } from '@/core/Flow';
 import { useBoothApp } from '@/core/composables/useBoothApp';
+import { InputManager, inputsEqual } from '@/core/services/inputManager';
 
 const { boothApp } = useBoothApp();
 
 const currentFlow:Ref<Flow|null> = ref(null);
+const selectionInputManager = ref<InputManager | null>(null);
 
 async function onPhotosTaken(images: ImageBitmap[]) {
     if (currentFlow.value === null) {
@@ -15,9 +17,70 @@ async function onPhotosTaken(images: ImageBitmap[]) {
 
     await runPipeline(currentFlow.value.processingNodesPipeline, images);
     currentFlow.value = null
+    startSelectionListener();
 }
 
+function stopSelectionListener() {
+    selectionInputManager.value?.destroy();
+    selectionInputManager.value = null;
+}
+
+async function listenForFlowSelection() {
+    if (currentFlow.value !== null) {
+        return;
+    }
+
+    const manager = selectionInputManager.value;
+    if (manager === null) {
+        return;
+    }
+
+    const input = await manager.waitForInput();
+    const matchedFlowIndex = boothApp.value.flowConfigurations.findIndex((flowConfiguration) => {
+        if (flowConfiguration.input === undefined || flowConfiguration.input === null) {
+            return false;
+        }
+
+        return inputsEqual(flowConfiguration.input, input);
+    });
+
+    if (matchedFlowIndex >= 0) {
+        const matchedFlow = boothApp.value.flowConfigurations[matchedFlowIndex];
+
+        if (matchedFlow === undefined) {
+            void listenForFlowSelection();
+            return;
+        }
+
+        currentFlow.value = instanciateFlowFromConfiguration(
+            matchedFlow,
+            boothApp.value,
+        );
+        stopSelectionListener();
+        return;
+    }
+
+    void listenForFlowSelection();
+}
+
+function startSelectionListener() {
+    if (currentFlow.value !== null || selectionInputManager.value !== null) {
+        return;
+    }
+
+    selectionInputManager.value = new InputManager();
+    void listenForFlowSelection();
+}
+
+onMounted(() => {
+    startSelectionListener();
+});
+
+onBeforeUnmount(() => {
+    stopSelectionListener();
+});
 </script>
+
 <template>
     <div v-if="boothApp.flowConfigurations.length === 0">
         <p>
@@ -30,7 +93,10 @@ async function onPhotosTaken(images: ImageBitmap[]) {
             v-for="(flowConfiguration, flowIndex) in boothApp.flowConfigurations"
             :key="flowIndex"
             class="flow-picker__card"
-            @click="currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp)"
+            @click="() => {
+                stopSelectionListener();
+                currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp);
+            }"
         >
             <h2>{{ flowConfiguration.name }}</h2>
         </div>

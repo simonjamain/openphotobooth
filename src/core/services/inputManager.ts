@@ -1,3 +1,5 @@
+import z from 'zod'
+
 export type KeyboardInput = {
   type: 'keyboard'
   code: string
@@ -7,11 +9,27 @@ export type KeyboardInput = {
 export type GamepadInput = {
   type: 'gamepad'
   gamepadId: string
-  gamepadIndex: number
   button: number
 }
 
 export type Input = KeyboardInput | GamepadInput
+
+export const KeyboardInputSchema = z.object({
+  type: z.literal('keyboard'),
+  code: z.string(),
+  key: z.string(),
+})
+
+export const GamepadInputSchema = z.object({
+  type: z.literal('gamepad'),
+  gamepadId: z.string(),
+  button: z.number().int().nonnegative(),
+})
+
+export const InputSchema = z.union([
+  KeyboardInputSchema,
+  GamepadInputSchema,
+])
 
 export class InputManager {
   private gamepads = new Map<number, Gamepad>()
@@ -77,7 +95,6 @@ export class InputManager {
           this.handleInput({
             type: 'gamepad',
             gamepadId: gamepad.id,
-            gamepadIndex: gamepad.index,
             button: buttonIndex,
           })
         }
@@ -213,4 +230,18 @@ export function inputsEqual(
   }
 
   return false
+}
+
+export function describeInput(
+  input: Input | null | undefined,
+): string {
+  if (!input) {
+    return 'No input bound'
+  }
+
+  if (input.type === 'keyboard') {
+    return `Key ${input.code} (${input.key})`
+  }
+
+  return `Gamepad ${input.gamepadId + 1} button ${input.button}`
 }
