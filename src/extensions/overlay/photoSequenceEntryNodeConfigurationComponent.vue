@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { watchEffect } from "vue";
-import type { OverlayEntryNodeConfiguration } from "./overlayEntryNodeConfiguration";
+import type { PhotoSequenceEntryNodeConfiguration } from "./photoSequenceEntryNodeConfiguration";
 
-const configuration = defineModel<OverlayEntryNodeConfiguration["configuration"]>("configuration", {
+const configuration = defineModel<PhotoSequenceEntryNodeConfiguration["configuration"]>("configuration", {
     default: () => ({
         photoCount: 1,
         delayMs: 1000

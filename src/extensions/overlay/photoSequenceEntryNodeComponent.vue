@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import type { CameraNode } from "@/core/types/CameraNode";
-import type { OverlayEntryNodeConfiguration } from "./overlayEntryNodeConfiguration";
+import type { PhotoSequenceEntryNodeConfiguration } from "./photoSequenceEntryNodeConfiguration";
 
 const props = defineProps<{
   cameraNode: CameraNode,
-  configuration: OverlayEntryNodeConfiguration["configuration"]
+  configuration: PhotoSequenceEntryNodeConfiguration["configuration"]
 }>();
 
 const emit = defineEmits<{
