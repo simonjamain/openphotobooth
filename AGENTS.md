@@ -2,168 +2,237 @@
 
 ## Product goal
 
-This will be an open-source photobooth app.
+This project is a frontend-only photobooth app built with Vue 3 + TypeScript + Vite. It is designed to run on a kiosk-like device, use a camera and optional printer, and process user-captured photos through a modular pipeline.
 
-> A photobooth is an app running on a device, usually linked to a camera and a printer that allow guests to take and print photos of them during events.
+The app is intentionally small and pragmatic:
 
-This app will be responsible to take user inputs (like the command to take a picture), take photos, process them, and print them.
+- no backend
+- browser-only runtime assumptions
+- modular node-based architecture for entry, camera, and processing steps
+- offline-friendly behavior by default
+- simple configuration saved in app state
 
-## Tech stack
+## Current architecture
 
-- web native progressive web app (PWA) (frontend-only)
-- no backend, everything runs client-side
-- written in typescript/vue.js/vite
+The actual implementation already follows a small extension architecture. The important contracts are defined in the core types and are the source of truth for new work.
 
-## Core functionality
+### Flow model
 
-The app will be looping across 4 main steps (except for configuration screens and stuff) :
+A flow is defined by:
 
-- 1 User select a flow
-  - note : if only one flow is active, the app will skip the flow selection step and go directly to taking the photo(s)
-- 2 User take the photo(s)
-- 3 Processing (applying filters, archiving, printing, ...) the photo(s)
-    - Those nodes take an array of images as input and return another array of images as output that can be altered or not (also the number of images can change). Those node are the base blocks of the processing chain, they can be used for outputs, like printing, or for further processing, like applying filters or archiving.
+- name
+- entryNode
+- cameraNode
+- processingNodesPipeline
+- optional input
 
-A flow is composed of a set of steps, starting with an entry node responsible for orchestrating the taking of one or more pictures.
+The core flow schema is:
 
-A flow is configured like this :
+```ts
+export const FlowConfigurationSchema = z.object({
+  name: z.string().trim().min(1).default("Untitled flow"),
+  entryNode: NodeConfigurationSchema,
+  cameraNode: NodeConfigurationSchema,
+  processingNodesPipeline: z.array(NodeConfigurationSchema),
+  input: InputSchema.nullish().default(null),
+})
+```
 
-- flow metadata
-  - name
-  - order
-    if multiple flows are available, the order will be used to display them in the UI
-    this is probably selected in a parent screen, like a "flows selection" screen
-- pipeline configuration
-    - entry node selection (and configuration)
-        - the entry node has a vue component responsible for orchestrating the taking of one or more pictures, and returning an array of images to the processing pipeline
-    - camera node selection (and configuration)
-    - processing node(s) selection and ordering(and configuration)
+The corresponding runtime shape is:
 
-The app is aimed to be highly modular, so that available nodes are provided by extensions.
+```ts
+export interface FlowConfiguration {
+  name: string
+  entryNode: NodeConfiguration
+  cameraNode: NodeConfiguration
+  processingNodesPipeline: NodeConfiguration[]
+  input?: Input | null
+}
+```
 
-- extension example A : upload photos to google drive
-    - (processing) node 1 : upload to google drive
-        - options
-            - linking your account
-            - choosing output folder
-            - file naming
-            - choosing what photos to upload (unprocessed, processed, both, ...)
-- extension example B : multi-pictures strip
-    - (entry) node 1 : multi-photos taking sequence
-        - options
-    - (processing) node 2 : apply a multi-photo strip template
-        - options
-            - choose or upload a template
-- extension example C : DNP hot folder printing
-    - (processing) node 1 : copy the processed photos into the hot folder used by the printing app
-        - options
-            - choose the hot folder used by the printing app
-- extension example D : IA prompt image processing
-    - (processing) node 1 : apply IA prompt image processing
-        - options
-            - choose the IA model to use
-            - choose the prompt to use
-            - set the user token
-- extension example E : custom image processing
-    - (processing) node 1 : apply custom image processing
-        - options
-            - choose the processing script/command to use
-- extension example F : green screen background removal
-    - (processing) node 1 : apply green screen background removal
-        - options
-            - choose the background image to use
-- extension example G : digicamcontrol tethering
-    - (camera) node 1 : take photos using tethered camera
-        - options
-            - change the default digicamcontrol api url
+### Node model
 
-### MVP
+Base nodes are plain objects, not classes:
 
-The base app will include the following extensions :
+```ts
+export interface Node {
+  id: string
+  name: string
+  configurationSchema: z.ZodType
+  configurationComponent?: Component
+}
+```
 
-- single photo taking
-    - (entry) node 1 : take a single photo
-        - options
-            - choose a delay before taking the photo
-- digicamcontrol tethering
-    - (camera) node 1 : take photos using tethered camera
-        - options
-            - change the default digicamcontrol api url
-            - choose the folder where digicamcontrol will save the photos (to get them back for processing)
-- hot folder printing
-    - (output) node 1 : copy the processed photos into the hot folder used by the printing app
-        - options
-            - choose the hot folder used by the printing app
-            - set delay for printing (to ensure printer has time to print before the next photo is sent to it)
+The app uses a generic node configuration wrapper:
 
-> Note : no processing, no archiving
+```ts
+export const NodeConfigurationSchema = z.object({
+  id: z.string(),
+  configuration: z.record(z.string(), z.any())
+})
+```
 
-### Philosophy
+This is the key point to preserve when authoring extensions: every node is selected by a string id and stores runtime config in a serializable record.
 
-1. For sake of simplicity and end-user focused philosophy, plugins will be bundled (open-source and PR based to include new ones)
-2. I will stick with browser only runtime constraints for as long as needed (tho plugins could theorically work with/need third-party modules).
-3. The focus is to be able to work in all sort of events, so that can implie offline or unstable internet acces, so I think that this app will have a strong emphasis on offline capabilities. And plugins who needs online capabilities will have to be very carefull, resilient, and very clear (toward the user) about internet stability requirements
-4. What to persist accross restarts ? configuration for sure, but for the rest, i would choose (or exclude for that matters) what serve best simplicity and resilience
-5. I would like to adopt a clean plugin-ready design for the get-go
+### Contract by node type
 
-## development philosophy
+- entry node: `component: Component<{ cameraNode: CameraNode }>`
+- camera node: `capture(): Promise<ImageBitmap[]>`
+- processing node: `process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]>`
 
-We like to keep things really simple with no unnecessary dependencies and just a very very simple ui at first to test core features.
+The actual project uses the following shape:
 
-Agents will not try to exceed excpectations and will only implement the bare minimum to ensure a correct workflow.
+```ts
+export interface EntryNode extends Node {
+  component: Component<{ cameraNode: CameraNode }>
+}
 
-## Extension authoring guide for AI agents
+export interface CameraNode extends Node {
+  capture(): Promise<ImageBitmap[]>
+}
 
-When implementing a new extension, prefer the smallest possible change that fits the existing architecture.
+export interface ProcessingNode extends Node {
+  process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]>
+}
+```
 
-- Start from the closest existing example:
-  - use the dummy extension as the simplest reference for a minimal extension
-  - use the digicamcontrol extension for a camera node with configuration and a Vue configuration component
-  - use the dnpprinters extension for a processing node that uses browser APIs and file-system permissions
-- Create the smallest set of files required:
-  - an extension registration file such as [name]Extension.ts to register nodes in app.registeredNodes
-  - one or more node files such as [name]EntryNode.ts, [name]CameraNode.ts or [name]ProcessingNode.ts
-  - an optional configuration type file and an optional Vue configuration component if the node has settings
-- Follow the core contracts exactly:
-  - entry nodes expose a Vue component and emit photosTaken(images)
-  - camera nodes implement capture() and return ImageBitmap[]
-  - processing nodes implement process(images) and return ImageBitmap[]
-- Keep the implementation simple and browser-safe:
-  - use plain exported objects, not classes
-  - use zod schemas for any uncontrolled input
-  - prefer serializable configuration over complex objects
-  - use markRaw for Vue components and defineModel for configuration component state
-  - for browser APIs such as File System Access or fetch, handle errors gracefully and keep the UI understandable
-- Register the extension in src/extensions/extensionsRegistry.ts so it is loaded automatically
-- Keep node ids namespaced with the vendor prefix, for example: vendor.entryNode.singlePhoto, vendor.cameraNode.api or vendor.processingNode.print
+### App registry
 
-A good default workflow is:
-1. copy the closest existing extension
-2. rename the exported symbols and ids
-3. adjust the configuration schema and component
-4. register the extension
-5. run the type check
+The app stores available nodes by category:
 
-Detailed implementation notes and a lightweight checklist live in src/extensions/README.md.
+```ts
+export interface App {
+  flowConfigurations: FlowConfiguration[]
+  registeredNodes: {
+    entryNodes: Record<string, EntryNode>
+    cameraNodes: Record<string, CameraNode>
+    processingNodes: Record<string, ProcessingNode>
+  }
+}
+```
 
-## coding style
+Extensions do not extend a framework class. They simply register into this registry via an `Extension` object:
 
-- serializable typescript interfaces and bindable functions over classes
-- zod schema for every uncontrolled input, trust in static typescript types for controlled input
-- readable names in plain english (camelCase for variables/functions & PascalCase for types)
-- early returns over nested structures
-- hexagonal architecture
-- prefer for(of/in) loops over .forEach() and whenever it is an option, for better readability and more intuitive await behaviour
-- don't use ; when not needed, but use it when it is needed
-- BEM for css
+```ts
+export interface Extension {
+  registerNodes(app: App): void
+}
+```
 
-### Vue.js
+This is the exact pattern used today:
 
-- prefer `ref` over `reactive`
-- prefer `watchEffect` over `watch`
+```ts
+export const dummyExtension: Extension = {
+  registerNodes(app) {
+    app.registeredNodes.entryNodes[dummyEntryNode.id] = dummyEntryNode
+    app.registeredNodes.cameraNodes[dummyCameraNode.id] = dummyCameraNode
+    app.registeredNodes.processingNodes[dummyProcessingNode.id] = dummyProcessingNode
+  }
+}
+```
 
-## Continuous improvement/learning
+## Current bundled extensions
 
-Agents will improve this file over time as we learn more about the project and its requirements. This file will be a living document that will evolve as the project progresses.
+The project currently ships with these extension groups in `src/extensions/extensionsRegistry.ts`:
 
-Agents will also try to keep this document clean and try to remove/shrink unnecessary details and information as we learn more about the project and its requirements. This file will be a living document that will evolve as the project progresses.
+- `dummy` — minimal entry, camera, and processing node examples
+- `digicamcontrol` — camera node for API-based tethering
+- `dnpprinters` — processing node for hot-folder printing
+- `overlay` — entry node for multi-photo sequences and overlay processing node
+
+The extension ids already follow namespaced conventions such as:
+
+- `dummy.entryNode.singlePhoto`
+- `dummy.cameraNode.lena`
+- `dummy.processingNode.void`
+- `overlay.entryNode.sequence`
+- `overlay.processingNode.overlay`
+- `digicamcontrol.cameraNode.api`
+- `hotfolderprint.processingNode.print`
+
+## UI and configuration conventions
+
+The actual UI binds node configuration with Vue model state. A node may provide a `configurationComponent` and the config is stored under the node configuration object:
+
+```ts
+{ id: string, configuration: Record<string, unknown> }
+```
+
+This means:
+
+- prefer serializable config values
+- keep config simple and readable
+- use zod schemas for uncontrolled or externally supplied data
+- use `defineModel` to bind configuration in Vue components when settings are needed
+- avoid deeply nested or non-serializable objects in node config
+
+## Development philosophy
+
+Keep implementations intentionally small and aligned to the current app structure.
+
+- do not add unnecessary dependencies
+- do not introduce a new abstraction unless the existing architecture already supports it
+- prefer minimal changes that fit the project contract
+- favor readability and simple browser-safe code over cleverness
+- keep the app easy to reason about for a single-page kiosk workflow
+
+## Extension authoring guidance
+
+When creating or updating an extension, follow the project as it exists today instead of the aspirational roadmap.
+
+### Preferred workflow
+
+1. Start from the closest existing extension.
+   - use `dummy` for the simplest minimal example
+   - use `digicamcontrol` for camera nodes with config and a settings component
+   - use `dnpprinters` for processing nodes that use browser APIs and file-system access
+2. Keep the new code minimal and aligned to the current contracts.
+3. Export a plain object with the correct id, name, and behavior.
+4. Register it in `src/extensions/extensionsRegistry.ts`.
+5. Run the type-check before finishing.
+
+### Required patterns
+
+- extension exports: `Extension` with `registerNodes(app)`
+- node registration: write into `app.registeredNodes.entryNodes`, `cameraNodes`, or `processingNodes`
+- id naming: use a vendor or extension prefix such as `vendor.entryNode.name`
+- entry node: exposes a Vue component and emits `photosTaken(images)`
+- camera node: implements `capture()` and returns `ImageBitmap[]`
+- processing node: implements `process(images)` and returns `ImageBitmap[]`
+
+### What to avoid
+
+- creating custom extension factories or class-based node systems unless the project already requires them
+- storing complex runtime objects in configuration instead of serializable fields
+- changing the app registry shape without updating the core types and all extension registration sites
+- overengineering plugin interfaces beyond the current `App` + `Extension` + node contracts
+
+## Validation before completion
+
+Before claiming a change is done, run the relevant project validation command.
+
+Current project commands:
+
+```bash
+npm run dev
+npm run type-check
+npm run build
+```
+
+For extension work, the minimum acceptable check is usually:
+
+```bash
+npm run type-check
+```
+
+## Summary for agents
+
+The project is not a broad plugin ecosystem yet; it is a compact, browser-only photobooth app with a simple registry-based extension system. The most important rule is to keep new work consistent with the existing node contracts and the current extension registry, not with any older conceptual document.
+
+When in doubt, follow the shapes already implemented in:
+
+- `src/core/types/*`
+- `src/extensions/dummy/*`
+- `src/extensions/digicamcontrol/*`
+- `src/extensions/dnpprinters/*`
+- `src/extensions/overlay/*`
