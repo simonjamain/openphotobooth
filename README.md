@@ -1,6 +1,9 @@
 # openphotobooth
 An open-source web-based photobooth software.
 
+NOte you should launch chrome with --disable-web-security activated
+`chrome.exe  --user-data-dir="%TEMP%\chrome-temp" --disable-web-security --no-first-run --no-default-browser-check`
+
 ## Project Setup
 
 ```sh
@@ -34,3 +37,4 @@ The main testing environment I use for testing is :
 - tethering app : DigiCamControl
 - printer : DNP QW410
 - printing app : DNP Hot Folder Print
+
