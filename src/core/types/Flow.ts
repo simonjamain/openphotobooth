@@ -18,9 +18,13 @@ export interface FlowConfiguration {
       processingNodesPipeline: NodeConfiguration[]
 }
 
+export type FlowEntryNode = EntryNode & NodeConfiguration
+export type FlowCameraNode = CameraNode & NodeConfiguration
+export type FlowProcessingNode = ProcessingNode & NodeConfiguration
+
 export interface Flow {
       name: string
-      entryNode: EntryNode
-      cameraNode: CameraNode
-      processingNodesPipeline: ProcessingNode[]
+      entryNode: FlowEntryNode
+      cameraNode: FlowCameraNode
+      processingNodesPipeline: FlowProcessingNode[]
 }

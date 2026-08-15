@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRaw, type Component, type Ref } from 'vue';
+import { computed, ref, toRaw, watch, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
@@ -30,20 +30,40 @@ const props = defineProps<{
     flowIndex?: string;
 }>();
 
-const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref({
+const defaultFlowConfiguration = (): Partial<FlowConfiguration> => ({
     name: 'Untitled flow',
     processingNodesPipeline: [],
 });
 
-const parsedFlowIndex = props.flowIndex === undefined
-    ? undefined
-    : Number.parseInt(props.flowIndex, 10);
+const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref(defaultFlowConfiguration());
 
-if (parsedFlowIndex !== undefined && Number.isFinite(parsedFlowIndex)) {
-    editedFlowConfiguration.value = structuredClone(toRaw(boothApp.value.flowConfigurations[parsedFlowIndex])) ?? {
-        processingNodesPipeline: [],
-    };
-}
+const parsedFlowIndex = computed<number | undefined>(() => {
+    if (props.flowIndex === undefined) {
+        return undefined;
+    }
+
+    const parsedValue = Number.parseInt(props.flowIndex, 10);
+    return Number.isFinite(parsedValue) ? parsedValue : undefined;
+});
+
+watch(
+    [parsedFlowIndex, () => boothApp.value.flowConfigurations],
+    () => {
+        if (parsedFlowIndex.value === undefined) {
+            editedFlowConfiguration.value = defaultFlowConfiguration();
+            return;
+        }
+
+        const selectedFlow = boothApp.value.flowConfigurations[parsedFlowIndex.value];
+        if (selectedFlow === undefined) {
+            editedFlowConfiguration.value = defaultFlowConfiguration();
+            return;
+        }
+
+        editedFlowConfiguration.value = structuredClone(toRaw(selectedFlow));
+    },
+    { immediate: true, deep: true },
+);
 
 
 const flowIsInvalid = computed(() => {

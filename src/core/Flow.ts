@@ -1,5 +1,5 @@
 import type { App } from "./types/App";
-import type { Flow, FlowConfiguration } from "./types/Flow";
+import type { Flow, FlowConfiguration, FlowProcessingNode } from "./types/Flow";
 import type { ProcessingNode } from "./types/ProcessingNode";
 
 export async function runPipeline(processingNodes: Readonly<ProcessingNode[]>, images: Readonly<ImageBitmap[]>): Promise<void> {
@@ -30,14 +30,14 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
         throw new Error(`Camera node not found for id: ${flowConfiguration.cameraNode.id}`)
     }
 
-    const processingNodesPipeline: ProcessingNode[] = []
+    const processingNodesPipeline: FlowProcessingNode[] = []
     for (const nodeConfiguration of flowConfiguration.processingNodesPipeline) {
         const processingNode = boothApp.registeredNodes.processingNodes[nodeConfiguration.id]
         if (processingNode === undefined) {
             throw new Error(`Processing node not found for id: ${nodeConfiguration.id}`)
         }
 
-        processingNodesPipeline.push({ ...processingNode, ...nodeConfiguration });
+        processingNodesPipeline.push({ ...processingNode, ...nodeConfiguration } as FlowProcessingNode);
     }
 
 
