@@ -28,7 +28,7 @@ watchEffect(() => {
     </label>
 
     <label>
-        Delay between photos (ms)
+        Delay before each photo (ms)
         <input v-model.number="configuration.delayMs" type="number" min="0" step="100" />
     </label>
 </template>
