@@ -6,6 +6,24 @@ import type { FlowConfiguration } from '@/core/types/Flow';
 import type { NodeConfiguration } from '@/core/types/Node';
 import nodeLinkage from '@/components/nodeLinkage.vue';
 
+console.log('flowConfigView.vue loaded');
+window.addEventListener("gamepadconnected", (e) => {
+  console.log(
+    "Gamepad connected at index %d: %s. %d buttons, %d axes.",
+    e.gamepad.index,
+    e.gamepad.id,
+    e.gamepad.buttons.length,
+    e.gamepad.axes.length,
+  );
+});
+window.addEventListener("gamepaddisconnected", (e) => {
+  console.log(
+    "Gamepad disconnected from index %d: %s",
+    e.gamepad.index,
+    e.gamepad.id,
+  );
+});
+
 const { boothApp } = useBoothApp();
 const router = useRouter();
 const props = defineProps<{
