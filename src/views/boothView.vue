@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, type Ref } from 'vue';
 import type { Flow, FlowProcessingNode } from '@/core/types/Flow';
-import { instanciateFlowFromConfiguration, runPipeline } from '@/core/Flow';
+import { instanciateFlowFromConfiguration, runPipelineUntilInteractiveNode } from '@/core/Flow';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import { InputManager, inputsEqual } from '@/core/services/inputManager';
-import sequenceDecisionScreen from '@/components/sequenceDecisionScreen.vue';
 
 const { boothApp } = useBoothApp();
 
@@ -12,33 +11,24 @@ const currentFlow:Ref<Flow|null> = ref(null);
 const selectionInputManager = ref<InputManager | null>(null);
 const pendingImages = ref<ImageBitmap[] | null>(null);
 const pendingProcessingNodes = ref<FlowProcessingNode[] | null>(null);
+const pendingRuntimeNode = ref<FlowProcessingNode | null>(null);
 const decisionInProgress = ref(false);
 
-function clearCancelScreenState() {
+function clearProcessingRuntimeState() {
     pendingImages.value = null;
     pendingProcessingNodes.value = null;
+    pendingRuntimeNode.value = null;
     decisionInProgress.value = false;
 }
 
 function finishFlow() {
-    clearCancelScreenState();
+    clearProcessingRuntimeState();
     currentFlow.value = null;
     startSelectionListener();
 }
 
-function normalizePauseIndex(pauseBeforeProcessingNodeIndex: number | null | undefined, processingNodesCount: number): number | null {
-    if (pauseBeforeProcessingNodeIndex === null || pauseBeforeProcessingNodeIndex === undefined) {
-        return null;
-    }
-
-    if (!Number.isInteger(pauseBeforeProcessingNodeIndex) || pauseBeforeProcessingNodeIndex < 0) {
-        return null;
-    }
-
-    return Math.min(pauseBeforeProcessingNodeIndex, processingNodesCount);
-}
-
-function openCancelScreen(images: Readonly<ImageBitmap[]>, remainingNodes: Readonly<FlowProcessingNode[]>) {
+function openRuntimeProcessingScreen(node: FlowProcessingNode, images: Readonly<ImageBitmap[]>, remainingNodes: Readonly<FlowProcessingNode[]>) {
+    pendingRuntimeNode.value = node;
     pendingImages.value = [...images];
     pendingProcessingNodes.value = [...remainingNodes];
 }
@@ -59,6 +49,7 @@ async function continueSequence() {
 
     const images = pendingImages.value;
     const processingNodes = pendingProcessingNodes.value;
+    const runtimeNode = pendingRuntimeNode.value;
 
     if (images === null || processingNodes === null) {
         return;
@@ -67,8 +58,37 @@ async function continueSequence() {
     decisionInProgress.value = true;
 
     try {
-        await runPipeline(processingNodes, images);
-        finishFlow();
+        if (runtimeNode !== null) {
+            const processedImages = await runtimeNode.process(images);
+            const nextPipelineResult = await runPipelineUntilInteractiveNode(processingNodes, processedImages);
+
+            if (nextPipelineResult.status === 'completed') {
+                finishFlow();
+                return;
+            }
+
+            openRuntimeProcessingScreen(
+                nextPipelineResult.runtimeNode,
+                nextPipelineResult.images,
+                nextPipelineResult.remainingNodes,
+            );
+            decisionInProgress.value = false;
+            return;
+        }
+
+        const nextPipelineResult = await runPipelineUntilInteractiveNode(processingNodes, images);
+
+        if (nextPipelineResult.status === 'completed') {
+            finishFlow();
+            return;
+        }
+
+        openRuntimeProcessingScreen(
+            nextPipelineResult.runtimeNode,
+            nextPipelineResult.images,
+            nextPipelineResult.remainingNodes,
+        );
+        decisionInProgress.value = false;
     }
     catch (error) {
         console.error('Unable to continue pipeline after cancel screen decision', error);
@@ -83,23 +103,18 @@ async function onPhotosTaken(images: ImageBitmap[]) {
 
     stopSelectionListener();
 
-    const pauseBeforeProcessingNodeIndex = normalizePauseIndex(
-        currentFlow.value.cancelScreen?.pauseBeforeProcessingNodeIndex,
-        currentFlow.value.processingNodesPipeline.length,
-    );
+    const pipelineResult = await runPipelineUntilInteractiveNode(currentFlow.value.processingNodesPipeline, images);
 
-    if (pauseBeforeProcessingNodeIndex === null) {
-        await runPipeline(currentFlow.value.processingNodesPipeline, images);
+    if (pipelineResult.status === 'completed') {
         finishFlow();
         return;
     }
 
-    const processingNodesBeforePause = currentFlow.value.processingNodesPipeline.slice(0, pauseBeforeProcessingNodeIndex);
-    const processingNodesAfterPause = currentFlow.value.processingNodesPipeline.slice(pauseBeforeProcessingNodeIndex);
-    const processedImages = await runPipeline(processingNodesBeforePause, images);
-
-    openCancelScreen(processedImages, processingNodesAfterPause);
-    return;
+    openRuntimeProcessingScreen(
+        pipelineResult.runtimeNode,
+        pipelineResult.images,
+        pipelineResult.remainingNodes,
+    );
 }
 
 function stopSelectionListener() {
@@ -160,7 +175,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     stopSelectionListener();
-    clearCancelScreenState();
+    clearProcessingRuntimeState();
 });
 </script>
 
@@ -184,11 +199,11 @@ onBeforeUnmount(() => {
             <h2>{{ flowConfiguration.name }}</h2>
         </div>
     </section>
-    <sequenceDecisionScreen
-        v-else-if="pendingImages !== null && currentFlow !== null"
+    <component
+        v-else-if="pendingImages !== null && pendingRuntimeNode !== null && pendingRuntimeNode.runtimeComponent !== undefined"
+        :is="pendingRuntimeNode.runtimeComponent"
         :images="pendingImages"
-        :cancelInput="currentFlow.cancelScreen?.cancelInput"
-        :continueInput="currentFlow.cancelScreen?.continueInput"
+        :configuration="pendingRuntimeNode.configuration"
         :busy="decisionInProgress"
         @cancel="cancelSequence"
         @continue="continueSequence"

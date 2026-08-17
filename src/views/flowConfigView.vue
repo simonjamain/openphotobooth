@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, toRaw, watch, type Component, type Ref } from 'vue';
+import { computed, ref, toRaw, watch, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
 import type { NodeConfiguration } from '@/core/types/Node';
 import nodeLinkage from '@/components/nodeLinkage.vue';
-import { describeInput, InputManager } from '@/core/services/inputManager';
 
 console.log('flowConfigView.vue loaded');
 window.addEventListener("gamepadconnected", (e) => {
@@ -34,26 +33,9 @@ const props = defineProps<{
 const defaultFlowConfiguration = (): Partial<FlowConfiguration> => ({
     name: 'Untitled flow',
     processingNodesPipeline: [],
-    cancelScreen: {
-        pauseBeforeProcessingNodeIndex: null,
-        cancelInput: null,
-        continueInput: null,
-    },
 });
 
 const editedFlowConfiguration: Ref<Partial<FlowConfiguration>> = ref(defaultFlowConfiguration());
-const activeCancelScreenInputBindingTarget = ref<'cancelInput' | 'continueInput' | null>(null);
-let activeCancelScreenInputBindingManager: InputManager | null = null;
-
-function ensureCancelScreenConfiguration() {
-    editedFlowConfiguration.value.cancelScreen = editedFlowConfiguration.value.cancelScreen ?? {
-        pauseBeforeProcessingNodeIndex: null,
-        cancelInput: null,
-        continueInput: null,
-    };
-
-    return editedFlowConfiguration.value.cancelScreen;
-}
 
 const parsedFlowIndex = computed<number | undefined>(() => {
     if (props.flowIndex === undefined) {
@@ -172,52 +154,6 @@ const processingNodesForDisplay = computed(() => {
     });
 });
 
-const cancelScreenPauseOptions = computed(() => {
-    const nodes = processingNodesForDisplay.value;
-    const options: { value: number; label: string }[] = [];
-
-    for (let nodeIndex = 0; nodeIndex <= nodes.length; nodeIndex += 1) {
-        if (nodes.length === 0) {
-            options.push({
-                value: nodeIndex,
-                label: 'Before processing starts',
-            });
-            break;
-        }
-
-        if (nodeIndex < nodes.length) {
-            const nodeLabel = nodes[nodeIndex]?.name ?? `Step ${nodeIndex + 1}`;
-            options.push({
-                value: nodeIndex,
-                label: `Before step ${nodeIndex + 1}: ${nodeLabel}`,
-            });
-            continue;
-        }
-
-        options.push({
-            value: nodeIndex,
-            label: 'After the last processing step',
-        });
-    }
-
-    return options;
-});
-
-const selectedPauseBeforeProcessingNodeIndex = computed<number | ''>({
-    get() {
-        return editedFlowConfiguration.value.cancelScreen?.pauseBeforeProcessingNodeIndex ?? '';
-    },
-    set(value: number | '') {
-        const cancelScreenConfiguration = ensureCancelScreenConfiguration();
-
-        if (value === '') {
-            cancelScreenConfiguration.pauseBeforeProcessingNodeIndex = null;
-            return;
-        }
-
-        cancelScreenConfiguration.pauseBeforeProcessingNodeIndex = value;
-    },
-});
 
 function addProcessingNode(nodeId: string) {
     editedFlowConfiguration.value.processingNodesPipeline = editedFlowConfiguration.value.processingNodesPipeline ?? [];
@@ -231,52 +167,26 @@ function removeProcessingNode(nodeIndex: number) {
     editedFlowConfiguration.value.processingNodesPipeline?.splice(nodeIndex, 1);
 }
 
-function cancelScreenInputLabel(inputTarget: 'cancelInput' | 'continueInput') {
-    const configuredInput = editedFlowConfiguration.value.cancelScreen?.[inputTarget];
-    return describeInput(configuredInput);
-}
+function moveProcessingNode(nodeIndex: number, offset: -1 | 1) {
+    const processingNodesPipeline = editedFlowConfiguration.value.processingNodesPipeline;
 
-function bindCancelScreenInputButtonLabel(inputTarget: 'cancelInput' | 'continueInput') {
-    if (activeCancelScreenInputBindingTarget.value === inputTarget) {
-        return 'Press a key or button...';
+    if (processingNodesPipeline === undefined) {
+        return;
     }
 
-    const configuredInput = editedFlowConfiguration.value.cancelScreen?.[inputTarget];
-    return configuredInput === null || configuredInput === undefined ? 'Bind input' : 'Rebind input';
-}
-
-function clearCancelScreenInput(inputTarget: 'cancelInput' | 'continueInput') {
-    const cancelScreenConfiguration = ensureCancelScreenConfiguration();
-    cancelScreenConfiguration[inputTarget] = null;
-}
-
-async function bindCancelScreenInput(inputTarget: 'cancelInput' | 'continueInput') {
-    if (activeCancelScreenInputBindingManager !== null) {
-        activeCancelScreenInputBindingManager.destroy();
-        activeCancelScreenInputBindingManager = null;
+    const targetIndex = nodeIndex + offset;
+    if (targetIndex < 0 || targetIndex >= processingNodesPipeline.length) {
+        return;
     }
 
-    const inputManager = new InputManager();
-    activeCancelScreenInputBindingManager = inputManager;
-    activeCancelScreenInputBindingTarget.value = inputTarget;
+    const movedNode = processingNodesPipeline[nodeIndex];
+    if (movedNode === undefined) {
+        return;
+    }
 
-    try {
-        const capturedInput = await inputManager.waitForInput();
-        const cancelScreenConfiguration = ensureCancelScreenConfiguration();
-        cancelScreenConfiguration[inputTarget] = capturedInput;
-    }
-    finally {
-        inputManager.destroy();
-        activeCancelScreenInputBindingManager = null;
-        activeCancelScreenInputBindingTarget.value = null;
-    }
+    processingNodesPipeline.splice(nodeIndex, 1);
+    processingNodesPipeline.splice(targetIndex, 0, movedNode);
 }
-
-onBeforeUnmount(() => {
-    activeCancelScreenInputBindingManager?.destroy();
-    activeCancelScreenInputBindingManager = null;
-    activeCancelScreenInputBindingTarget.value = null;
-});
 
 function saveFlowConfiguration() {
     if (flowIsInvalid.value) {
@@ -372,9 +282,27 @@ function saveFlowConfiguration() {
                         >
                             <div class="processing-list__title-row">
                                 <strong>{{ name }}</strong>
-                                <button class="processing-list__remove" type="button" @click="removeProcessingNode(nodeIndex)">
-                                    🗑
-                                </button>
+                                <div class="processing-list__actions">
+                                    <button
+                                        type="button"
+                                        class="processing-list__move"
+                                        :disabled="nodeIndex === 0"
+                                        @click="moveProcessingNode(nodeIndex, -1)"
+                                    >
+                                        Move up
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="processing-list__move"
+                                        :disabled="nodeIndex === processingNodesForDisplay.length - 1"
+                                        @click="moveProcessingNode(nodeIndex, 1)"
+                                    >
+                                        Move down
+                                    </button>
+                                    <button class="processing-list__remove" type="button" @click="removeProcessingNode(nodeIndex)">
+                                        Remove
+                                    </button>
+                                </div>
                             </div>
                             <component
                                 v-if="configurationComponent !== undefined"
@@ -399,63 +327,6 @@ function saveFlowConfiguration() {
                 </div>
             </article>
 
-            <article>
-                <p class="chain-node__eyebrow">Step 3</p>
-                <h2>Cancel/print decision screen</h2>
-                <p class="flow-config__note">
-                    Pause the flow at a chosen point to let the user cancel or continue to print.
-                </p>
-
-                <div class="processing-list__item">
-                    <label for="cancel-screen-position-select">Pause location in processing chain</label>
-                    <select id="cancel-screen-position-select" v-model="selectedPauseBeforeProcessingNodeIndex">
-                        <option value="">Disabled</option>
-                        <option
-                            v-for="pauseOption in cancelScreenPauseOptions"
-                            :key="pauseOption.value"
-                            :value="pauseOption.value"
-                        >
-                            {{ pauseOption.label }}
-                        </option>
-                    </select>
-                </div>
-
-                <div class="processing-list__item">
-                    <p class="flow-input-group__title">Cancel input</p>
-                    <p class="flow-input-group__value">{{ cancelScreenInputLabel('cancelInput') }}</p>
-                    <div class="flow-actions">
-                        <button type="button" @click="bindCancelScreenInput('cancelInput')">
-                            {{ bindCancelScreenInputButtonLabel('cancelInput') }}
-                        </button>
-                        <button
-                            v-if="editedFlowConfiguration.cancelScreen?.cancelInput !== null && editedFlowConfiguration.cancelScreen?.cancelInput !== undefined"
-                            type="button"
-                            class="clear-input-button"
-                            @click="clearCancelScreenInput('cancelInput')"
-                        >
-                            Clear input
-                        </button>
-                    </div>
-                </div>
-
-                <div class="processing-list__item">
-                    <p class="flow-input-group__title">Print input</p>
-                    <p class="flow-input-group__value">{{ cancelScreenInputLabel('continueInput') }}</p>
-                    <div class="flow-actions">
-                        <button type="button" @click="bindCancelScreenInput('continueInput')">
-                            {{ bindCancelScreenInputButtonLabel('continueInput') }}
-                        </button>
-                        <button
-                            v-if="editedFlowConfiguration.cancelScreen?.continueInput !== null && editedFlowConfiguration.cancelScreen?.continueInput !== undefined"
-                            type="button"
-                            class="clear-input-button"
-                            @click="clearCancelScreenInput('continueInput')"
-                        >
-                            Clear input
-                        </button>
-                    </div>
-                </div>
-            </article>
         </div>
 
         <footer class="flow-config__actions">
@@ -479,11 +350,6 @@ function saveFlowConfiguration() {
 .flow-chain {
     display: grid;
     gap: var(--space-4);
-}
-
-.flow-config__note {
-    margin-top: 0;
-    color: var(--color-text-soft);
 }
 
 .chain-node {
@@ -532,6 +398,22 @@ function saveFlowConfiguration() {
     margin-bottom: var(--space-2);
 }
 
+.processing-list__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.processing-list__move {
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+}
+
+.processing-list__move:hover {
+    background: color-mix(in srgb, var(--color-surface-muted) 70%, var(--color-page-background));
+}
+
 .processing-list__empty {
     color: var(--color-text-soft);
 }
@@ -558,38 +440,6 @@ function saveFlowConfiguration() {
     gap: var(--space-2);
 }
 
-.flow-input-group__title {
-    margin: 0;
-    font-size: 0.78rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-soft);
-    font-weight: 700;
-}
-
-.flow-input-group__value {
-    margin: var(--space-2) 0 var(--space-3);
-    display: inline-block;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid var(--color-border-strong);
-    background: var(--color-surface);
-    color: var(--color-text-soft);
-}
-
-.flow-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    align-items: center;
-}
-
-.clear-input-button {
-    background: var(--color-surface-muted);
-    color: var(--color-text);
-    border-color: var(--color-border-strong);
-}
-
 .flow-config__actions {
     display: flex;
     align-items: center;
@@ -600,6 +450,12 @@ function saveFlowConfiguration() {
     .processing-list__title-row {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .processing-list__actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
     }
 
     .flow-config__actions {

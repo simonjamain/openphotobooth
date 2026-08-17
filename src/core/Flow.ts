@@ -1,18 +1,43 @@
 import type { App } from "./types/App";
 import type { Flow, FlowConfiguration, FlowProcessingNode } from "./types/Flow";
-import type { ProcessingNode } from "./types/ProcessingNode";
 
-export async function runPipeline(processingNodes: Readonly<ProcessingNode[]>, images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]> {
-    const nextProcessingNode = processingNodes.slice(0,1)[0];
-
-    if(nextProcessingNode === undefined) {
-        console.debug("end of the processing pipeline reached");
-        return [...images];
+export type PipelineRunResult =
+    | {
+        status: "completed"
+        images: ImageBitmap[]
+    }
+    | {
+        status: "paused"
+        runtimeNode: FlowProcessingNode
+        images: ImageBitmap[]
+        remainingNodes: FlowProcessingNode[]
     }
 
-    const processedImages = await nextProcessingNode.process(images)
-    
-    return await runPipeline(processingNodes.slice(1), processedImages);
+export async function runPipelineUntilInteractiveNode(
+    processingNodes: Readonly<FlowProcessingNode[]>,
+    images: Readonly<ImageBitmap[]>,
+): Promise<PipelineRunResult> {
+    let currentImages = [...images]
+
+    for (let nodeIndex = 0; nodeIndex < processingNodes.length; nodeIndex += 1) {
+        const node = processingNodes[nodeIndex] as FlowProcessingNode
+
+        if (node.runtimeComponent !== undefined) {
+            return {
+                status: "paused",
+                runtimeNode: node,
+                images: currentImages,
+                remainingNodes: processingNodes.slice(nodeIndex + 1),
+            }
+        }
+
+        currentImages = await node.process(currentImages)
+    }
+
+    return {
+        status: "completed",
+        images: currentImages,
+    }
 }
 
 /**
@@ -47,6 +72,5 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
         entryNode: { ...entryNode, ...flowConfiguration.entryNode },
         cameraNode: { ...cameraNode, ...flowConfiguration.cameraNode },
         processingNodesPipeline,
-        cancelScreen: flowConfiguration.cancelScreen,
     }
 }

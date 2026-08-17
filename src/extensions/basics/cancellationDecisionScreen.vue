@@ -1,109 +1,109 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { InputManager, inputsEqual, type Input } from '@/core/services/inputManager';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { InputManager, inputsEqual, type Input } from '@/core/services/inputManager'
 
 const props = defineProps<{
-    images: Readonly<ImageBitmap[]>;
-    cancelInput?: Input | null;
-    continueInput?: Input | null;
-    busy?: boolean;
-}>();
+    images: Readonly<ImageBitmap[]>
+    cancelInput?: Input | null
+    continueInput?: Input | null
+    busy?: boolean
+}>()
 
 const emit = defineEmits<{
-    cancel: [];
-    continue: [];
-}>();
+    cancel: []
+    continue: []
+}>()
 
-let inputManager: InputManager | null = null;
-let keepListening = true;
-const activePreviewIndex = ref(0);
+let inputManager: InputManager | null = null
+let keepListening = true
+const activePreviewIndex = ref(0)
 
 function imageBitmapToDataUrl(imageBitmap: ImageBitmap): string {
-    const canvas = document.createElement('canvas');
-    canvas.width = imageBitmap.width;
-    canvas.height = imageBitmap.height;
+    const canvas = document.createElement('canvas')
+    canvas.width = imageBitmap.width
+    canvas.height = imageBitmap.height
 
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d')
     if (context === null) {
-        return '';
+        return ''
     }
 
-    context.drawImage(imageBitmap, 0, 0);
-    return canvas.toDataURL('image/jpeg');
+    context.drawImage(imageBitmap, 0, 0)
+    return canvas.toDataURL('image/jpeg')
 }
 
 const imagePreviews = computed(() => props.images
     .map((imageBitmap) => imageBitmapToDataUrl(imageBitmap))
-    .filter((preview) => preview !== ''));
-const activePreview = computed(() => imagePreviews.value[activePreviewIndex.value] ?? null);
-const hasMultiplePreviews = computed(() => imagePreviews.value.length > 1);
+    .filter((preview) => preview !== ''))
+const activePreview = computed(() => imagePreviews.value[activePreviewIndex.value] ?? null)
+const hasMultiplePreviews = computed(() => imagePreviews.value.length > 1)
 
 function stopInputListening() {
-    keepListening = false;
-    inputManager?.destroy();
-    inputManager = null;
+    keepListening = false
+    inputManager?.destroy()
+    inputManager = null
 }
 
 function matchesConfiguredInput(input: Input, expectedInput: Input | null | undefined): boolean {
     if (expectedInput === null || expectedInput === undefined) {
-        return false;
+        return false
     }
 
-    return inputsEqual(input, expectedInput);
+    return inputsEqual(input, expectedInput)
 }
 
 async function listenForDecisionInput() {
     if (inputManager === null) {
-        return;
+        return
     }
 
     while (keepListening && inputManager !== null) {
-        const input = await inputManager.waitForInput();
+        const input = await inputManager.waitForInput()
 
         if (props.busy) {
-            continue;
+            continue
         }
 
         if (matchesConfiguredInput(input, props.cancelInput)) {
-            emit('cancel');
-            return;
+            emit('cancel')
+            return
         }
 
         if (matchesConfiguredInput(input, props.continueInput)) {
-            emit('continue');
-            return;
+            emit('continue')
+            return
         }
     }
 }
 
 function selectPreview(previewIndex: number) {
-    activePreviewIndex.value = previewIndex;
+    activePreviewIndex.value = previewIndex
 }
 
 watch(
     () => imagePreviews.value.length,
     (length) => {
         if (length === 0) {
-            activePreviewIndex.value = 0;
-            return;
+            activePreviewIndex.value = 0
+            return
         }
 
         if (activePreviewIndex.value >= length) {
-            activePreviewIndex.value = 0;
+            activePreviewIndex.value = 0
         }
     },
     { immediate: true },
-);
+)
 
 onMounted(() => {
-    keepListening = true;
-    inputManager = new InputManager();
-    void listenForDecisionInput();
-});
+    keepListening = true
+    inputManager = new InputManager()
+    void listenForDecisionInput()
+})
 
 onBeforeUnmount(() => {
-    stopInputListening();
-});
+    stopInputListening()
+})
 </script>
 
 <template>
@@ -115,11 +115,13 @@ onBeforeUnmount(() => {
             </header>
 
             <div class="decision-screen__hero">
-                <img
+                <div
                     v-if="activePreview !== null"
-                    :src="activePreview"
-                    :alt="`Selected captured photo ${activePreviewIndex + 1}`"
-                >
+                    class="decision-screen__hero-image"
+                    role="img"
+                    :aria-label="`Selected captured photo ${activePreviewIndex + 1}`"
+                    :style="{ backgroundImage: `url(${activePreview})` }"
+                />
                 <p v-else class="decision-screen__empty-preview">
                     Preview unavailable, but the captured image(s) are ready.
                 </p>
@@ -136,7 +138,12 @@ onBeforeUnmount(() => {
                     :disabled="busy"
                     @click="selectPreview(imageIndex)"
                 >
-                    <img :src="imagePreview" :alt="`Captured photo ${imageIndex + 1}`">
+                    <span
+                        class="decision-screen__thumbnail-image"
+                        role="img"
+                        :aria-label="`Captured photo ${imageIndex + 1}`"
+                        :style="{ backgroundImage: `url(${imagePreview})` }"
+                    />
                 </button>
             </nav>
         </section>
@@ -161,18 +168,22 @@ onBeforeUnmount(() => {
 .decision-screen {
     position: fixed;
     inset: 0;
+    height: 100dvh;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
     gap: var(--space-4);
     padding: var(--space-4);
     background: var(--color-surface);
+    overflow: hidden;
 }
 
 .decision-screen__stage {
     min-width: 0;
+    height: 100%;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     gap: var(--space-3);
+    min-height: 0;
 }
 
 .decision-screen__header h2 {
@@ -186,6 +197,8 @@ onBeforeUnmount(() => {
 
 .decision-screen__hero {
     min-height: 0;
+    height: 100%;
+    max-height: 100%;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background:
@@ -197,10 +210,13 @@ onBeforeUnmount(() => {
     overflow: hidden;
 }
 
-.decision-screen__hero img {
-    width: min(100%, 1000px);
-    height: min(100%, 72vh);
-    object-fit: contain;
+.decision-screen__hero-image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
     border-radius: var(--radius-sm);
 }
 
@@ -212,12 +228,13 @@ onBeforeUnmount(() => {
 
 .decision-screen__filmstrip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(4.8rem, 6.2rem));
+    grid-template-columns: repeat(auto-fit, minmax(5rem, 8rem));
     gap: var(--space-2);
-    align-content: start;
-    max-height: 22vh;
-    overflow: auto;
-    padding-bottom: var(--space-1);
+    justify-content: start;
+    align-content: stretch;
+    overflow: hidden;
+    min-height: 0;
+    block-size: 6rem;
 }
 
 .decision-screen__thumbnail {
@@ -226,14 +243,18 @@ onBeforeUnmount(() => {
     background: var(--color-surface-muted);
     padding: 0;
     overflow: hidden;
-    aspect-ratio: 3 / 2;
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 0;
 }
 
-.decision-screen__thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.decision-screen__thumbnail-image {
     display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
 }
 
 .decision-screen__thumbnail.is-active {
@@ -249,6 +270,8 @@ onBeforeUnmount(() => {
     display: grid;
     align-content: start;
     gap: var(--space-3);
+    min-height: 0;
+    overflow: hidden;
 }
 
 .decision-screen__badge {
@@ -285,12 +308,13 @@ onBeforeUnmount(() => {
 
 @media (max-width: 900px) {
     .decision-screen {
+        height: 100dvh;
         grid-template-columns: 1fr;
         grid-template-rows: minmax(0, 1fr) auto;
     }
 
-    .decision-screen__hero img {
-        height: min(52vh, 100%);
+    .decision-screen__hero {
+        min-height: 0;
     }
 
     .decision-screen__actions-panel {
@@ -309,8 +333,8 @@ onBeforeUnmount(() => {
     }
 
     .decision-screen__filmstrip {
-        grid-template-columns: repeat(auto-fit, minmax(4rem, 5rem));
-        max-height: 18vh;
+        grid-template-columns: repeat(auto-fit, minmax(4.2rem, 6.2rem));
+        block-size: 5rem;
     }
 
     .decision-screen__actions {
