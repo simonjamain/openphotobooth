@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { describeInput, InputManager } from '@/core/services/inputManager'
 import type { CancellationDecisionProcessingNodeConfiguration } from './cancellationDecisionProcessingNodeConfiguration'
+
+const { t } = useI18n()
 
 const configuration = defineModel<CancellationDecisionProcessingNodeConfiguration['configuration']>('configuration', {
     default: () => ({
@@ -23,10 +26,10 @@ function clearInput(target: 'cancelInput' | 'continueInput') {
 
 function bindButtonLabel(target: 'cancelInput' | 'continueInput'): string {
     if (activeBindingTarget.value === target) {
-        return 'Press a key or button...'
+        return t('common.pressKeyOrButton')
     }
 
-    return configuration.value[target] ? 'Rebind input' : 'Bind input'
+    return configuration.value[target] ? t('common.rebindInput') : t('common.bindInput')
 }
 
 async function bindInput(target: 'cancelInput' | 'continueInput') {
@@ -53,7 +56,7 @@ async function bindInput(target: 'cancelInput' | 'continueInput') {
 
 <template>
     <section class="decision-config">
-        <h3>Cancel action input</h3>
+        <h3>{{ $t('cancellationDecision.cancelInputTitle') }}</h3>
         <p>{{ labelForInput('cancelInput') }}</p>
         <div class="decision-config__actions">
             <button type="button" @click="bindInput('cancelInput')">{{ bindButtonLabel('cancelInput') }}</button>
@@ -63,11 +66,11 @@ async function bindInput(target: 'cancelInput' | 'continueInput') {
                 class="decision-config__clear"
                 @click="clearInput('cancelInput')"
             >
-                Clear
+                {{ $t('common.clear') }}
             </button>
         </div>
 
-        <h3>Print action input</h3>
+        <h3>{{ $t('cancellationDecision.printInputTitle') }}</h3>
         <p>{{ labelForInput('continueInput') }}</p>
         <div class="decision-config__actions">
             <button type="button" @click="bindInput('continueInput')">{{ bindButtonLabel('continueInput') }}</button>
@@ -77,7 +80,7 @@ async function bindInput(target: 'cancelInput' | 'continueInput') {
                 class="decision-config__clear"
                 @click="clearInput('continueInput')"
             >
-                Clear
+                {{ $t('common.clear') }}
             </button>
         </div>
     </section>

@@ -1,5 +1,6 @@
 import { markRaw } from 'vue'
 import type { ProcessingNode } from '@/core/types/ProcessingNode'
+import { i18n } from '@/i18n'
 import {
     CopiesSelectorProcessingNodeConfigurationSchema,
     type CopiesSelectorProcessingNodeConfiguration,
@@ -9,7 +10,7 @@ import copiesSelectorProcessingNodeConfigurationComponent from './copiesSelector
 
 export const copiesSelectorProcessingNode: ProcessingNode = {
     id: 'basics.processingNode.copiesSelector',
-    name: 'Copies selector',
+    name: i18n.global.t('copiesSelector.nodeName'),
     configurationSchema: CopiesSelectorProcessingNodeConfigurationSchema,
     configurationComponent: markRaw(copiesSelectorProcessingNodeConfigurationComponent),
     runtimeComponent: markRaw(copiesSelectorProcessingNodeRuntimeComponent),

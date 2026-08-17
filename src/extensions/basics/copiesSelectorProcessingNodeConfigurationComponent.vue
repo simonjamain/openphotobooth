@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { describeInput, InputManager } from '@/core/services/inputManager'
 import type { CopiesSelectorProcessingNodeConfiguration } from './copiesSelectorProcessingNodeConfiguration'
+
+const { t } = useI18n()
 
 const configuration = defineModel<CopiesSelectorProcessingNodeConfiguration['configuration']>('configuration', {
     default: () => ({
@@ -26,10 +29,10 @@ function clearInput(target: 'increaseInput' | 'decreaseInput' | 'validateInput')
 
 function bindButtonLabel(target: 'increaseInput' | 'decreaseInput' | 'validateInput'): string {
     if (activeBindingTarget.value === target) {
-        return 'Press a key or button...'
+        return t('common.pressKeyOrButton')
     }
 
-    return configuration.value[target] ? 'Rebind input' : 'Bind input'
+    return configuration.value[target] ? t('common.rebindInput') : t('common.bindInput')
 }
 
 async function bindInput(target: 'increaseInput' | 'decreaseInput' | 'validateInput') {
@@ -56,10 +59,10 @@ async function bindInput(target: 'increaseInput' | 'decreaseInput' | 'validateIn
 
 <template>
     <section class="copies-config">
-        <h3>Maximum copies</h3>
+        <h3>{{ $t('copiesSelector.maxCopiesTitle') }}</h3>
         <input v-model.number="configuration.maxCopies" type="number" min="1" max="50">
 
-        <h3>Increase copies input</h3>
+        <h3>{{ $t('copiesSelector.increaseInputTitle') }}</h3>
         <p>{{ labelForInput('increaseInput') }}</p>
         <div class="copies-config__actions">
             <button type="button" @click="bindInput('increaseInput')">{{ bindButtonLabel('increaseInput') }}</button>
@@ -69,11 +72,11 @@ async function bindInput(target: 'increaseInput' | 'decreaseInput' | 'validateIn
                 class="copies-config__clear"
                 @click="clearInput('increaseInput')"
             >
-                Clear
+                {{ $t('common.clear') }}
             </button>
         </div>
 
-        <h3>Decrease copies input</h3>
+        <h3>{{ $t('copiesSelector.decreaseInputTitle') }}</h3>
         <p>{{ labelForInput('decreaseInput') }}</p>
         <div class="copies-config__actions">
             <button type="button" @click="bindInput('decreaseInput')">{{ bindButtonLabel('decreaseInput') }}</button>
@@ -83,11 +86,11 @@ async function bindInput(target: 'increaseInput' | 'decreaseInput' | 'validateIn
                 class="copies-config__clear"
                 @click="clearInput('decreaseInput')"
             >
-                Clear
+                {{ $t('common.clear') }}
             </button>
         </div>
 
-        <h3>Validate input</h3>
+        <h3>{{ $t('copiesSelector.validateInputTitle') }}</h3>
         <p>{{ labelForInput('validateInput') }}</p>
         <div class="copies-config__actions">
             <button type="button" @click="bindInput('validateInput')">{{ bindButtonLabel('validateInput') }}</button>
@@ -97,7 +100,7 @@ async function bindInput(target: 'increaseInput' | 'decreaseInput' | 'validateIn
                 class="copies-config__clear"
                 @click="clearInput('validateInput')"
             >
-                Clear
+                {{ $t('common.clear') }}
             </button>
         </div>
     </section>

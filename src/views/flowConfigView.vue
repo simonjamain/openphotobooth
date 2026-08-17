@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, toRaw, watch, type Component, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import type { FlowConfiguration } from '@/core/types/Flow';
 import type { NodeConfiguration } from '@/core/types/Node';
@@ -26,12 +27,13 @@ window.addEventListener("gamepaddisconnected", (e) => {
 
 const { boothApp } = useBoothApp();
 const router = useRouter();
+const { t } = useI18n();
 const props = defineProps<{
     flowIndex?: string;
 }>();
 
 const defaultFlowConfiguration = (): Partial<FlowConfiguration> => ({
-    name: 'Untitled flow',
+    name: t('flowConfig.namePlaceholder'),
     processingNodesPipeline: [],
 });
 
@@ -190,7 +192,7 @@ function moveProcessingNode(nodeIndex: number, offset: -1 | 1) {
 
 function saveFlowConfiguration() {
     if (flowIsInvalid.value) {
-        alert('FlowConfiguration is not valid. Please make sure all required fields are filled.');
+        alert(t('flowConfig.invalidAlert'));
         return;
     }
 
@@ -207,29 +209,28 @@ function saveFlowConfiguration() {
 <template>
     <section class="flow-config">
         <header class="flow-config__header">
-            <h1>{{ $props.flowIndex === undefined ? 'New Flow' : (editedFlowConfiguration.name ?? `Editing Flow ${$props.flowIndex}`) }}</h1>
+            <h1>{{ $props.flowIndex === undefined ? $t('flowConfig.newFlow') : (editedFlowConfiguration.name ?? $t('flowConfig.editingFlow', { index: $props.flowIndex })) }}</h1>
             <p>
-                A flow is a chain: one <strong>entry node</strong> starts the photo capture, then
-                <strong>processing nodes</strong> run one after another.
+                {{ $t('flowConfig.description') }}
             </p>
         </header>
 
         <div class="flow-chain">
             <article>
-                <p class="chain-node__eyebrow">Flow details</p>
-                <h2>Name</h2>
-                <label for="flow-name-input">Give the flow a descriptive name</label>
-                <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" placeholder="Untitled flow" />
+                <p class="chain-node__eyebrow">{{ $t('flowConfig.detailsEyebrow') }}</p>
+                <h2>{{ $t('flowConfig.nameTitle') }}</h2>
+                <label for="flow-name-input">{{ $t('flowConfig.nameLabel') }}</label>
+                <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" :placeholder="$t('flowConfig.namePlaceholder')" />
             </article>
                         
 
             <article>
-                <p class="chain-node__eyebrow">Step 1</p>
-                <h2>Entry node</h2>
+                <p class="chain-node__eyebrow">{{ $t('flowConfig.step1') }}</p>
+                <h2>{{ $t('flowConfig.entryNodeTitle') }}</h2>
                 <div class="processing-list__item">
-                    <label for="entry-node-select">Choose how the flow starts</label>
+                    <label for="entry-node-select">{{ $t('flowConfig.entryNodeLabel') }}</label>
                     <select id="entry-node-select" v-model="selectedEntryNodeId">
-                        <option disabled value="">Select an entry node</option>
+                        <option disabled value="">{{ $t('flowConfig.entryNodePlaceholder') }}</option>
                         <option
                             v-for="node in boothApp.registeredNodes.entryNodes"
                             :key="node.id"
@@ -247,9 +248,9 @@ function saveFlowConfiguration() {
                 </div>
                 <node-linkage />
                 <div class="processing-list__item">
-                    <label for="camera-node-select">How to take photos</label>
+                    <label for="camera-node-select">{{ $t('flowConfig.cameraNodeLabel') }}</label>
                     <select id="camera-node-select" v-model="selectedCameraNodeId">
-                        <option disabled value="">Select a camera node</option>
+                        <option disabled value="">{{ $t('flowConfig.cameraNodePlaceholder') }}</option>
                         <option
                             v-for="node in boothApp.registeredNodes.cameraNodes"
                             :key="node.id"
@@ -267,8 +268,8 @@ function saveFlowConfiguration() {
                 </div>
             </article>
             <article>
-                <p class="chain-node__eyebrow">Step 2</p>
-                <h2>Processing chain</h2>
+                <p class="chain-node__eyebrow">{{ $t('flowConfig.step2') }}</p>
+                <h2>{{ $t('flowConfig.processingTitle') }}</h2>
 
                 <ol class="processing-list" v-if="processingNodesForDisplay.length > 0">
                     <template 
@@ -289,7 +290,7 @@ function saveFlowConfiguration() {
                                         :disabled="nodeIndex === 0"
                                         @click="moveProcessingNode(nodeIndex, -1)"
                                     >
-                                        Move up
+                                        {{ $t('common.moveUp') }}
                                     </button>
                                     <button
                                         type="button"
@@ -297,10 +298,10 @@ function saveFlowConfiguration() {
                                         :disabled="nodeIndex === processingNodesForDisplay.length - 1"
                                         @click="moveProcessingNode(nodeIndex, 1)"
                                     >
-                                        Move down
+                                        {{ $t('common.moveDown') }}
                                     </button>
                                     <button class="processing-list__remove" type="button" @click="removeProcessingNode(nodeIndex)">
-                                        Remove
+                                        {{ $t('common.remove') }}
                                     </button>
                                 </div>
                             </div>
@@ -313,7 +314,7 @@ function saveFlowConfiguration() {
                     </template>
                 </ol>
 
-                <p v-else class="processing-list__empty">No processing node yet. Add one below.</p>
+                <p v-else class="processing-list__empty">{{ $t('flowConfig.processingEmpty') }}</p>
 
                 <div class="processing-node-palette">
                     <button
@@ -322,7 +323,7 @@ function saveFlowConfiguration() {
                         type="button"
                         @click="addProcessingNode(node.id)"
                     >
-                        Add {{ node.name }}
+                        {{ $t('flowConfig.addNode', { name: node.name }) }}
                     </button>
                 </div>
             </article>
@@ -330,8 +331,8 @@ function saveFlowConfiguration() {
         </div>
 
         <footer class="flow-config__actions">
-            <button type="button" :disabled="flowIsInvalid" @click="saveFlowConfiguration">Save flow</button>
-            <RouterLink to="/flows">Back to flows</RouterLink>
+            <button type="button" :disabled="flowIsInvalid" @click="saveFlowConfiguration">{{ $t('flowConfig.saveFlow') }}</button>
+            <RouterLink to="/flows">{{ $t('flowConfig.backToFlows') }}</RouterLink>
         </footer>
     </section>
 </template>

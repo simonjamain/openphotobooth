@@ -126,8 +126,8 @@ onBeforeUnmount(() => {
 
 <template>
     <section class="copies-selector-screen">
-        <h2>How many copies?</h2>
-        <p class="copies-selector-screen__note">Choose the number of copies, then validate to continue.</p>
+        <h2>{{ $t('copiesSelector.title') }}</h2>
+        <p class="copies-selector-screen__note">{{ $t('copiesSelector.subtitle') }}</p>
 
         <div class="copies-selector-screen__counter">
             <button type="button" :disabled="busy || selectedCopies <= 1" @click="decreaseCopies">
@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
         </div>
 
         <button type="button" class="copies-selector-screen__validate" :disabled="busy" @click="validateCopies">
-            Validate copies
+            {{ $t('copiesSelector.validate') }}
         </button>
     </section>
 </template>

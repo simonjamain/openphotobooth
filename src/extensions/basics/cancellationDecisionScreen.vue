@@ -110,8 +110,8 @@ onBeforeUnmount(() => {
     <section class="decision-screen">
         <section class="decision-screen__stage">
             <header class="decision-screen__header">
-                <h2>Confirm this sequence</h2>
-                <p>Review the photo(s), then cancel or continue to print.</p>
+                <h2>{{ $t('cancellationDecision.title') }}</h2>
+                <p>{{ $t('cancellationDecision.subtitle') }}</p>
             </header>
 
             <div class="decision-screen__hero">
@@ -119,15 +119,15 @@ onBeforeUnmount(() => {
                     v-if="activePreview !== null"
                     class="decision-screen__hero-image"
                     role="img"
-                    :aria-label="`Selected captured photo ${activePreviewIndex + 1}`"
+                    :aria-label="$t('cancellationDecision.selectedPhotoAria', { index: activePreviewIndex + 1 })"
                     :style="{ backgroundImage: `url(${activePreview})` }"
                 />
                 <p v-else class="decision-screen__empty-preview">
-                    Preview unavailable, but the captured image(s) are ready.
+                    {{ $t('cancellationDecision.emptyPreview') }}
                 </p>
             </div>
 
-            <nav v-if="hasMultiplePreviews" class="decision-screen__filmstrip" aria-label="Captured photos">
+            <nav v-if="hasMultiplePreviews" class="decision-screen__filmstrip" :aria-label="$t('cancellationDecision.capturedPhotosAriaLabel')">
                 <button
                     v-for="(imagePreview, imageIndex) in imagePreviews"
                     :key="imageIndex"
@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
                     <span
                         class="decision-screen__thumbnail-image"
                         role="img"
-                        :aria-label="`Captured photo ${imageIndex + 1}`"
+                        :aria-label="$t('cancellationDecision.capturedPhotoAria', { index: imageIndex + 1 })"
                         :style="{ backgroundImage: `url(${imagePreview})` }"
                     />
                 </button>
@@ -149,15 +149,15 @@ onBeforeUnmount(() => {
         </section>
 
         <aside class="decision-screen__actions-panel">
-            <p class="decision-screen__badge">{{ imagePreviews.length }} photo(s)</p>
-            <p class="decision-screen__help">Continue to print this sequence, or cancel and return to flow selection.</p>
+            <p class="decision-screen__badge">{{ $t('cancellationDecision.photosCount', { count: imagePreviews.length }) }}</p>
+            <p class="decision-screen__help">{{ $t('cancellationDecision.help') }}</p>
 
             <div class="decision-screen__actions">
                 <button type="button" class="decision-screen__cancel" :disabled="busy" @click="$emit('cancel')">
-                    Cancel
+                    {{ $t('common.cancel') }}
                 </button>
                 <button type="button" :disabled="busy" @click="$emit('continue')">
-                    Print
+                    {{ $t('common.print') }}
                 </button>
             </div>
         </aside>

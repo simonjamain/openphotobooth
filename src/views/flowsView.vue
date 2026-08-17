@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import { describeInput, InputManager } from '@/core/services/inputManager';
 
 const { boothApp } = useBoothApp();
 const router = useRouter();
+const { t } = useI18n();
 const bindingFlowIndex = ref<number | null>(null)
 let activeInputBinding: InputManager | null = null
 
@@ -29,13 +31,13 @@ function flowHasInput(flowIndex: number) {
 
 function shortcutLabel(flowIndex: number) {
     if (!flowHasInput(flowIndex)) {
-        return 'Not bound'
+        return t('flows.notBound')
     }
 
     const flowConfiguration = boothApp.value.flowConfigurations[flowIndex]
 
     if (flowConfiguration === undefined || flowConfiguration.input === undefined || flowConfiguration.input === null) {
-        return 'Not bound'
+        return t('flows.notBound')
     }
 
     return describeInput(flowConfiguration.input)
@@ -43,10 +45,10 @@ function shortcutLabel(flowIndex: number) {
 
 function bindButtonLabel(flowIndex: number) {
     if (bindingFlowIndex.value === flowIndex) {
-        return 'Press a key or button…'
+        return t('common.pressKeyOrButton')
     }
 
-    return flowHasInput(flowIndex) ? 'Rebind input' : 'Bind input'
+    return flowHasInput(flowIndex) ? t('common.rebindInput') : t('common.bindInput')
 }
 
 function clearFlowInput(flowIndex: number) {
@@ -90,8 +92,8 @@ function removeFlow(flowIndex: number) {
     const flowName = boothApp.value.flowConfigurations[flowIndex]?.name
 
     const confirmedMessage = flowName !== undefined && flowName !== ''
-        ? `Remove flow “${flowName}”?`
-        : `Remove this flow?`
+        ? t('flows.removeConfirmNamed', { name: flowName })
+        : t('flows.removeConfirmGeneric')
 
     if (!window.confirm(confirmedMessage)) {
         return
@@ -105,16 +107,16 @@ function removeFlow(flowIndex: number) {
     <div class="flows-admin-view">
         <header class="flows-admin-view__header">
             <div>
-                <h1>Flows</h1>
+                <h1>{{ $t('flows.title') }}</h1>
                 <p class="flows-admin-view__subtitle">
-                    Configure shortcuts and preview how each flow appears in booth mode.
+                    {{ $t('flows.subtitle') }}
                 </p>
             </div>
-            <button type="button" @click="addFlow">Add new flow</button>
+            <button type="button" @click="addFlow">{{ $t('flows.addNewFlow') }}</button>
         </header>
 
         <p v-if="boothApp.flowConfigurations.length === 0" class="flows-admin-view__empty-state">
-            No flow configured yet.
+            {{ $t('flows.emptyState') }}
         </p>
 
         <section v-else class="flows-grid">
@@ -123,7 +125,7 @@ function removeFlow(flowIndex: number) {
                     <h2>{{ flow.name }}</h2>
                 </div>
                 <section class="flow-input-group">
-                    <p class="flow-input-group__title">Input</p>
+                    <p class="flow-input-group__title">{{ $t('flows.inputTitle') }}</p>
                     <p class="flow-input-group__value">{{ shortcutLabel(flowIndex) }}</p>
                     <div class="flow-actions">
                         <button type="button" @click="bindFlowInput(flowIndex)">
@@ -135,20 +137,20 @@ function removeFlow(flowIndex: number) {
                             class="clear-input-button"
                             @click="clearFlowInput(flowIndex)"
                         >
-                            Clear input
+                            {{ $t('common.clear') }}
                         </button>
                     </div>
                 </section>
 
                 <div class="flow-actions">
-                    <button type="button" @click="editFlow(flowIndex)">Edit flow</button>
-                    <button type="button" class="remove-flow-button" @click="removeFlow(flowIndex)">Remove</button>
+                    <button type="button" @click="editFlow(flowIndex)">{{ $t('flows.editFlow') }}</button>
+                    <button type="button" class="remove-flow-button" @click="removeFlow(flowIndex)">{{ $t('common.remove') }}</button>
                 </div>
             </article>
         </section>
 
         <p class="flows-admin-view__footer-link">
-            <RouterLink to="/booth">Open booth</RouterLink>
+            <RouterLink to="/booth">{{ $t('flows.openBooth') }}</RouterLink>
         </p>
     </div>
 </template>

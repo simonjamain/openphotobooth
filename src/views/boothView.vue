@@ -182,8 +182,8 @@ onBeforeUnmount(() => {
 <template>
     <div v-if="boothApp.flowConfigurations.length === 0">
         <p>
-            No runnable flow available. Add a new one
-            <RouterLink to="/configure">Flow Configuration</RouterLink>.
+            {{ $t('booth.noRunnableFlow') }}
+            <RouterLink to="/configure">{{ $t('booth.flowConfigurationLink') }}</RouterLink>.
         </p>
     </div>
     <section v-if="currentFlow === null" class="flow-picker">
