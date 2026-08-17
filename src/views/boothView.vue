@@ -1,23 +1,105 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, type Ref } from 'vue';
-import type { Flow } from '@/core/types/Flow';
+import type { Flow, FlowProcessingNode } from '@/core/types/Flow';
 import { instanciateFlowFromConfiguration, runPipeline } from '@/core/Flow';
 import { useBoothApp } from '@/core/composables/useBoothApp';
 import { InputManager, inputsEqual } from '@/core/services/inputManager';
+import sequenceDecisionScreen from '@/components/sequenceDecisionScreen.vue';
 
 const { boothApp } = useBoothApp();
 
 const currentFlow:Ref<Flow|null> = ref(null);
 const selectionInputManager = ref<InputManager | null>(null);
+const pendingImages = ref<ImageBitmap[] | null>(null);
+const pendingProcessingNodes = ref<FlowProcessingNode[] | null>(null);
+const decisionInProgress = ref(false);
+
+function clearCancelScreenState() {
+    pendingImages.value = null;
+    pendingProcessingNodes.value = null;
+    decisionInProgress.value = false;
+}
+
+function finishFlow() {
+    clearCancelScreenState();
+    currentFlow.value = null;
+    startSelectionListener();
+}
+
+function normalizePauseIndex(pauseBeforeProcessingNodeIndex: number | null | undefined, processingNodesCount: number): number | null {
+    if (pauseBeforeProcessingNodeIndex === null || pauseBeforeProcessingNodeIndex === undefined) {
+        return null;
+    }
+
+    if (!Number.isInteger(pauseBeforeProcessingNodeIndex) || pauseBeforeProcessingNodeIndex < 0) {
+        return null;
+    }
+
+    return Math.min(pauseBeforeProcessingNodeIndex, processingNodesCount);
+}
+
+function openCancelScreen(images: Readonly<ImageBitmap[]>, remainingNodes: Readonly<FlowProcessingNode[]>) {
+    pendingImages.value = [...images];
+    pendingProcessingNodes.value = [...remainingNodes];
+}
+
+function cancelSequence() {
+    if (decisionInProgress.value) {
+        return;
+    }
+
+    decisionInProgress.value = true;
+    finishFlow();
+}
+
+async function continueSequence() {
+    if (decisionInProgress.value) {
+        return;
+    }
+
+    const images = pendingImages.value;
+    const processingNodes = pendingProcessingNodes.value;
+
+    if (images === null || processingNodes === null) {
+        return;
+    }
+
+    decisionInProgress.value = true;
+
+    try {
+        await runPipeline(processingNodes, images);
+        finishFlow();
+    }
+    catch (error) {
+        console.error('Unable to continue pipeline after cancel screen decision', error);
+        decisionInProgress.value = false;
+    }
+}
 
 async function onPhotosTaken(images: ImageBitmap[]) {
     if (currentFlow.value === null) {
         return;
     }
 
-    await runPipeline(currentFlow.value.processingNodesPipeline, images);
-    currentFlow.value = null
-    startSelectionListener();
+    stopSelectionListener();
+
+    const pauseBeforeProcessingNodeIndex = normalizePauseIndex(
+        currentFlow.value.cancelScreen?.pauseBeforeProcessingNodeIndex,
+        currentFlow.value.processingNodesPipeline.length,
+    );
+
+    if (pauseBeforeProcessingNodeIndex === null) {
+        await runPipeline(currentFlow.value.processingNodesPipeline, images);
+        finishFlow();
+        return;
+    }
+
+    const processingNodesBeforePause = currentFlow.value.processingNodesPipeline.slice(0, pauseBeforeProcessingNodeIndex);
+    const processingNodesAfterPause = currentFlow.value.processingNodesPipeline.slice(pauseBeforeProcessingNodeIndex);
+    const processedImages = await runPipeline(processingNodesBeforePause, images);
+
+    openCancelScreen(processedImages, processingNodesAfterPause);
+    return;
 }
 
 function stopSelectionListener() {
@@ -78,6 +160,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     stopSelectionListener();
+    clearCancelScreenState();
 });
 </script>
 
@@ -101,6 +184,15 @@ onBeforeUnmount(() => {
             <h2>{{ flowConfiguration.name }}</h2>
         </div>
     </section>
+    <sequenceDecisionScreen
+        v-else-if="pendingImages !== null && currentFlow !== null"
+        :images="pendingImages"
+        :cancelInput="currentFlow.cancelScreen?.cancelInput"
+        :continueInput="currentFlow.cancelScreen?.continueInput"
+        :busy="decisionInProgress"
+        @cancel="cancelSequence"
+        @continue="continueSequence"
+    />
     <component
         v-else
         :is="currentFlow.entryNode.component"

@@ -2,12 +2,12 @@ import type { App } from "./types/App";
 import type { Flow, FlowConfiguration, FlowProcessingNode } from "./types/Flow";
 import type { ProcessingNode } from "./types/ProcessingNode";
 
-export async function runPipeline(processingNodes: Readonly<ProcessingNode[]>, images: Readonly<ImageBitmap[]>): Promise<void> {
+export async function runPipeline(processingNodes: Readonly<ProcessingNode[]>, images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]> {
     const nextProcessingNode = processingNodes.slice(0,1)[0];
 
     if(nextProcessingNode === undefined) {
         console.debug("end of the processing pipeline reached");
-        return;
+        return [...images];
     }
 
     const processedImages = await nextProcessingNode.process(images)
@@ -47,5 +47,6 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
         entryNode: { ...entryNode, ...flowConfiguration.entryNode },
         cameraNode: { ...cameraNode, ...flowConfiguration.cameraNode },
         processingNodesPipeline,
+        cancelScreen: flowConfiguration.cancelScreen,
     }
 }
