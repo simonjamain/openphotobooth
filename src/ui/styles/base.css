@@ -2,7 +2,7 @@
 
 * {
     box-sizing: border-box;
-    cursor:none !important;/* hide cusror for touch screens */
+    /* cursor:none !important;hide cusror for touch screens */
 }
 
 html,

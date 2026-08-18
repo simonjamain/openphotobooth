@@ -5,17 +5,17 @@
     --font-family-heading: "Sora", "Plus Jakarta Sans", "Segoe UI", sans-serif;
 
     --color-page-background: #f4f7fb;
-    --color-surface: #ffffff;
-    --color-surface-muted: #f8fafc;
+    --color-surface: #f6e9ee;
+    --color-surface-muted: #f9d5e5;
     --color-border: #d6dfeb;
     --color-border-strong: #b4c3d8;
     --color-text: #172233;
     --color-text-soft: #49617f;
-    --color-primary: #0b7285;
-    --color-primary-hover: #0a6272;
+    --color-primary: #4d6850;
+    --color-primary-hover: #698e6d;
     --color-primary-foreground: #f8fcff;
-    --color-danger: #be123c;
-    --color-danger-hover: #9f1239;
+    --color-danger: #d80d0d;
+    --color-danger-hover: #e43434;
     --color-danger-foreground: #fff5f7;
 
     --radius-sm: 0.4rem;

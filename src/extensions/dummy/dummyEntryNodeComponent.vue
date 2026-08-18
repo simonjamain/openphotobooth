@@ -21,5 +21,5 @@ onMounted(() => {
 
 </script>
 <template>
-    <div>smile !</div>
+    <div>{{ $t('dummyEntryNode.smile') }}</div>
 </template>

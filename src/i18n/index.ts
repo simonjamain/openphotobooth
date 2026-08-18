@@ -2,6 +2,8 @@ import { createI18n } from 'vue-i18n'
 import en from './messages/en'
 import fr from './messages/fr'
 import { basicsMessages } from '@/extensions/basics/i18n'
+import { dummyMessages } from '@/extensions/dummy/i18n'
+import { overlayMessages } from '@/extensions/overlay/i18n'
 
 const SUPPORTED_LOCALES = ['en', 'fr'] as const
 
@@ -26,10 +28,14 @@ export const i18n = createI18n({
         en: {
             ...en,
             ...basicsMessages.en,
+            ...dummyMessages.en,
+            ...overlayMessages.en,
         },
         fr: {
             ...fr,
             ...basicsMessages.fr,
+            ...dummyMessages.fr,
+            ...overlayMessages.fr,
         },
     },
 })

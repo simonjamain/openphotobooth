@@ -90,12 +90,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="sequence-capture">
-    <p class="sequence-capture__progress">Photo {{ currentPhotoNumber }} / {{ totalPhotoCount }}</p>
+    <p class="sequence-capture__progress">{{ $t('photoSequenceEntryNode.progress', { current: currentPhotoNumber, total: totalPhotoCount }) }}</p>
     <p v-if="captureState === 'countdown' && countdownValue !== null" class="sequence-capture__countdown">
       {{ countdownValue }}
     </p>
-    <p v-else-if="captureState === 'capturing'" class="sequence-capture__hint">Smile!</p>
-    <p v-else class="sequence-capture__hint">Processing...</p>
+    <p v-else-if="captureState === 'capturing'" class="sequence-capture__hint">{{ $t('photoSequenceEntryNode.smile') }}</p>
+    <p v-else class="sequence-capture__hint">{{ $t('photoSequenceEntryNode.processing') }}</p>
   </div>
 </template>
 
