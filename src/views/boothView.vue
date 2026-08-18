@@ -191,6 +191,7 @@ onBeforeUnmount(() => {
             v-for="(flowConfiguration, flowIndex) in boothApp.flowConfigurations"
             :key="flowIndex"
             class="flow-picker__card"
+            :style="flowConfiguration.coverImage ? { backgroundImage: `url(${flowConfiguration.coverImage})` } : {}"
             @click="() => {
                 stopSelectionListener();
                 currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp);
@@ -237,6 +238,8 @@ onBeforeUnmount(() => {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface-muted);
+    background-size: cover;
+    background-position: center;
     cursor: pointer;
     min-height: 0;
 }
@@ -244,5 +247,6 @@ onBeforeUnmount(() => {
 .flow-picker__card h2 {
     margin: 0;
     text-align: center;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 </style>

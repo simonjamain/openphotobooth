@@ -47,5 +47,9 @@ export default {
         invalidAlert: 'La configuration du flow est invalide. Verifiez que tous les champs requis sont remplis.',
         saveFlow: 'Enregistrer le flow',
         backToFlows: 'Retour aux flows',
+        coverImageLabel: 'Image de couverture',
+        coverImageDescription: 'Affich\u00e9e en arri\u00e8re-plan dans le booth et la liste des flows',
+        coverImageUpload: 'Charger une image',
+        coverImageClear: "Supprimer l\u2019image de couverture",
     },
 } as const
