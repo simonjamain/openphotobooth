@@ -121,7 +121,11 @@ function removeFlow(flowIndex: number) {
 
         <section v-else class="flows-grid">
             <article v-for="(flow, flowIndex) in boothApp.flowConfigurations" :key="flowIndex" class="flow-card">
-                <div class="flow-preview" :class="{ 'is-binding': bindingFlowIndex === flowIndex }">
+                <div
+                    class="flow-preview"
+                    :class="{ 'is-binding': bindingFlowIndex === flowIndex }"
+                    :style="flow.coverImage ? { backgroundImage: `url(${flow.coverImage})` } : {}"
+                >
                     <h2>{{ flow.name }}</h2>
                 </div>
                 <section class="flow-input-group">
@@ -215,6 +219,8 @@ function removeFlow(flowIndex: number) {
         color-mix(in srgb, var(--color-surface-muted) 70%, white) 0%,
         color-mix(in srgb, var(--color-surface-muted) 85%, var(--color-page-background)) 100%
     );
+    background-size: cover;
+    background-position: center;
 }
 
 .flow-preview.is-binding {
@@ -235,6 +241,7 @@ function removeFlow(flowIndex: number) {
     margin: 0;
     font-size: clamp(1.2rem, 3.6vw, 1.8rem);
     max-width: 18ch;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .flow-input-group__value {

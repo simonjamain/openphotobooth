@@ -47,5 +47,9 @@ export default {
         invalidAlert: 'Flow configuration is not valid. Please make sure all required fields are filled.',
         saveFlow: 'Save flow',
         backToFlows: 'Back to flows',
+        coverImageLabel: 'Cover image',
+        coverImageDescription: 'Displayed as background in booth and flows list',
+        coverImageUpload: 'Upload image',
+        coverImageClear: 'Remove cover image',
     },
 } as const

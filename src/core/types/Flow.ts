@@ -7,6 +7,7 @@ import { InputSchema, type Input } from "../services/inputManager"
 
 export const FlowConfigurationSchema = z.object({
     name: z.string().trim().min(1).default("Untitled flow"),
+    coverImage: z.string().nullish().default(null),
     entryNode: NodeConfigurationSchema,
     cameraNode: NodeConfigurationSchema,
     processingNodesPipeline: z.array(NodeConfigurationSchema),
@@ -15,6 +16,7 @@ export const FlowConfigurationSchema = z.object({
 
 export interface FlowConfiguration {
       name: string
+      coverImage?: string | null
       entryNode: NodeConfiguration
       cameraNode: NodeConfiguration
       processingNodesPipeline: NodeConfiguration[]

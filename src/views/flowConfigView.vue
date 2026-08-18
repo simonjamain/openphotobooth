@@ -190,6 +190,19 @@ function moveProcessingNode(nodeIndex: number, offset: -1 | 1) {
     processingNodesPipeline.splice(targetIndex, 0, movedNode);
 }
 
+function onCoverImageChange(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+        editedFlowConfiguration.value.coverImage = reader.result as string
+    }
+    reader.readAsDataURL(file)
+    input.value = ''
+}
+
 function saveFlowConfiguration() {
     if (flowIsInvalid.value) {
         alert(t('flowConfig.invalidAlert'));
@@ -221,6 +234,26 @@ function saveFlowConfiguration() {
                 <h2>{{ $t('flowConfig.nameTitle') }}</h2>
                 <label for="flow-name-input">{{ $t('flowConfig.nameLabel') }}</label>
                 <input id="flow-name-input" v-model="editedFlowConfiguration.name" type="text" :placeholder="$t('flowConfig.namePlaceholder')" />
+
+                <label class="cover-image-label">{{ $t('flowConfig.coverImageLabel') }}</label>
+                <p class="cover-image-description">{{ $t('flowConfig.coverImageDescription') }}</p>
+                <div class="cover-image-preview" v-if="editedFlowConfiguration.coverImage">
+                    <img :src="editedFlowConfiguration.coverImage" alt="" class="cover-image-preview__img" />
+                </div>
+                <div class="cover-image-actions">
+                    <label class="cover-image-upload-btn">
+                        {{ $t('flowConfig.coverImageUpload') }}
+                        <input type="file" accept="image/*" class="cover-image-file-input" @change="onCoverImageChange" />
+                    </label>
+                    <button
+                        v-if="editedFlowConfiguration.coverImage"
+                        type="button"
+                        class="cover-image-clear-btn"
+                        @click="editedFlowConfiguration.coverImage = null"
+                    >
+                        {{ $t('flowConfig.coverImageClear') }}
+                    </button>
+                </div>
             </article>
                         
 
@@ -445,6 +478,66 @@ function saveFlowConfiguration() {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+}
+
+.cover-image-label {
+    display: block;
+    margin-top: var(--space-3);
+    font-weight: 600;
+}
+
+.cover-image-description {
+    margin: var(--space-1) 0 var(--space-2);
+    color: var(--color-text-soft);
+    font-size: 0.875rem;
+}
+
+.cover-image-preview {
+    width: 100%;
+    max-height: 10rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--space-2);
+}
+
+.cover-image-preview__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cover-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.cover-image-upload-btn {
+    display: inline-block;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.cover-image-upload-btn:hover {
+    background: color-mix(in srgb, var(--color-surface-muted) 70%, var(--color-page-background));
+}
+
+.cover-image-file-input {
+    display: none;
+}
+
+.cover-image-clear-btn {
+    background: var(--color-danger);
+    color: var(--color-danger-foreground);
+    border-color: var(--color-danger);
 }
 
 @media (max-width: 640px) {
