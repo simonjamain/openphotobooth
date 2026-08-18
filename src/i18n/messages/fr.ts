@@ -48,8 +48,8 @@ export default {
         saveFlow: 'Enregistrer le flow',
         backToFlows: 'Retour aux flows',
         coverImageLabel: 'Image de couverture',
-        coverImageDescription: 'Affichee en arriere-plan dans le booth et la liste des flows',
+        coverImageDescription: 'Affich\u00e9e en arri\u00e8re-plan dans le booth et la liste des flows',
         coverImageUpload: 'Charger une image',
-        coverImageClear: 'Supprimer l image de couverture',
+        coverImageClear: "Supprimer l\u2019image de couverture",
     },
 } as const

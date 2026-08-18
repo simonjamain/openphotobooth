@@ -197,7 +197,19 @@ function onCoverImageChange(event: Event) {
 
     const reader = new FileReader()
     reader.onload = () => {
-        editedFlowConfiguration.value.coverImage = reader.result as string
+        const img = new Image()
+        img.onload = () => {
+            const MAX_SIZE = 1200
+            const scale = Math.min(1, MAX_SIZE / Math.max(img.width, img.height))
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.round(img.width * scale)
+            canvas.height = Math.round(img.height * scale)
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+            editedFlowConfiguration.value.coverImage = canvas.toDataURL('image/jpeg', 0.82)
+        }
+        img.src = reader.result as string
     }
     reader.readAsDataURL(file)
     input.value = ''
