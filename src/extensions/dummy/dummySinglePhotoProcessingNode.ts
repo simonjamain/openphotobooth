@@ -5,7 +5,7 @@ import z from "zod";
 
 export const dummySinglePhotoProcessingNode: ProcessingNode = {
     id: "dummy.processingNode.singlePhoto",
-    name: "single photo capture",
+    name: "Single photo capture",
     async process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]> {
         return [...images];
     },

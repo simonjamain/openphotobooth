@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
             @click="() => {
                 stopSelectionListener();
                 currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp);
-                startPipeline();
+                void startPipeline();
             }"
         >
             <div

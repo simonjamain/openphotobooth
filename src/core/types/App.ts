@@ -1,5 +1,5 @@
 import type { CameraNode } from "./CameraNode"
-import type { Flow, FlowConfiguration, FlowProcessingNode } from "./Flow"
+import type { FlowConfiguration } from "./Flow"
 import type { ProcessingNode } from "./ProcessingNode"
 
 export interface App {
