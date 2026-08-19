@@ -215,7 +215,6 @@ onBeforeUnmount(() => {
         :is="pendingRuntimeNode.runtimeComponent"
         :images="pendingImages"
         :configuration="pendingRuntimeNode.configuration"
-        :cameraNode="currentFlow.cameraNode"
         :busy="decisionInProgress"
         @cancel="cancelSequence"
         @continue="continueSequence"
