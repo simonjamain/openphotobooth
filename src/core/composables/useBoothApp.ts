@@ -9,7 +9,6 @@ const FLOW_CONFIGURATIONS_STORAGE_KEY = "flowConfigurations"
 const boothApp: Ref<App> = ref({
     flowConfigurations: [],
     registeredNodes: {
-        entryNodes: {},
         cameraNodes: {},
         processingNodes: {},
     },

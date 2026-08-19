@@ -3,16 +3,19 @@ import { onMounted } from 'vue';
 import type { CameraNode } from '@/core/types/CameraNode';
 
 const props = defineProps<{
+  images: Readonly<ImageBitmap[]>,
+  configuration: Record<string, unknown>,
   cameraNode: CameraNode,
-  configuration: Record<string, unknown>
+  busy?: boolean,
 }>()
 
 const emit = defineEmits<{
-  (e: 'photosTaken', images: ImageBitmap[]): void
+  cancel: []
+  continue: [images: ImageBitmap[]]
 }>()
 
 async function takePhoto() {
-    emit('photosTaken', await props.cameraNode.capture());
+    emit('continue', await props.cameraNode.capture());
 }
 
 onMounted(() => {

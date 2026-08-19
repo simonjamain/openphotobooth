@@ -70,7 +70,6 @@ watch(
 
 const flowIsInvalid = computed(() => {
     return editedFlowConfiguration.value.name?.trim() === ''
-        || editedFlowConfiguration.value.entryNode === undefined
         || editedFlowConfiguration.value.cameraNode === undefined
         || editedFlowConfiguration.value.processingNodesPipeline === undefined;
 });
@@ -86,40 +85,6 @@ const selectedCameraNode = computed(() => {
 
 const selectedCameraNodeConfigurationComponent = computed<Component | undefined>(() => {
     return selectedCameraNode.value?.configurationComponent as Component | undefined;
-});
-
-const selectedEntryNode = computed(() => {
-    const selectedEntryNodeId = editedFlowConfiguration.value.entryNode?.id;
-    if (selectedEntryNodeId === undefined) {
-        return undefined;
-    }
-
-    return boothApp.value.registeredNodes.entryNodes[selectedEntryNodeId];
-});
-
-const selectedEntryNodeConfigurationComponent = computed<Component | undefined>(() => {
-    return selectedEntryNode.value?.configurationComponent as Component | undefined;
-});
-
-const selectedEntryNodeId = computed<string>({
-    get() {
-        return editedFlowConfiguration.value.entryNode?.id ?? '';
-    },
-    set(nodeId: string) {
-        if (nodeId === '') {
-            editedFlowConfiguration.value.entryNode = undefined;
-            return;
-        }
-
-        if (editedFlowConfiguration.value.entryNode?.id === nodeId) {
-            return;
-        }
-
-        editedFlowConfiguration.value.entryNode = {
-            id: nodeId,
-            configuration: {},
-        } as NodeConfiguration;
-    },
 });
 
 const selectedCameraNodeId = computed<string>({
@@ -271,27 +236,7 @@ function saveFlowConfiguration() {
 
             <article>
                 <p class="chain-node__eyebrow">{{ $t('flowConfig.step1') }}</p>
-                <h2>{{ $t('flowConfig.entryNodeTitle') }}</h2>
-                <div class="processing-list__item">
-                    <label for="entry-node-select">{{ $t('flowConfig.entryNodeLabel') }}</label>
-                    <select id="entry-node-select" v-model="selectedEntryNodeId">
-                        <option disabled value="">{{ $t('flowConfig.entryNodePlaceholder') }}</option>
-                        <option
-                            v-for="node in boothApp.registeredNodes.entryNodes"
-                            :key="node.id"
-                            :value="node.id"
-                        >
-                            {{ node.name }}
-                        </option>
-                    </select>
-
-                    <component
-                        v-if="selectedEntryNodeConfigurationComponent !== undefined && editedFlowConfiguration.entryNode !== undefined"
-                        :is="selectedEntryNodeConfigurationComponent"
-                        v-model:configuration="editedFlowConfiguration.entryNode.configuration"
-                    />
-                </div>
-                <node-linkage />
+                <h2>{{ $t('flowConfig.cameraNodeTitle') }}</h2>
                 <div class="processing-list__item">
                     <label for="camera-node-select">{{ $t('flowConfig.cameraNodeLabel') }}</label>
                     <select id="camera-node-select" v-model="selectedCameraNodeId">

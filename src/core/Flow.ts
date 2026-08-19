@@ -45,11 +45,6 @@ export async function runPipelineUntilInteractiveNode(
  */
 export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfiguration, boothApp: App): Flow {
 
-    const entryNode = boothApp.registeredNodes.entryNodes[flowConfiguration.entryNode.id]
-    if (entryNode === undefined) {
-        throw new Error(`Entry node not found for id: ${flowConfiguration.entryNode.id}`)
-    }
-
     const cameraNode = boothApp.registeredNodes.cameraNodes[flowConfiguration.cameraNode.id]
     if (cameraNode === undefined) {
         throw new Error(`Camera node not found for id: ${flowConfiguration.cameraNode.id}`)
@@ -69,7 +64,6 @@ export function instanciateFlowFromConfiguration(flowConfiguration: FlowConfigur
     // we bind the node configurations to the registered nodes the their methods can access the configuration through `this.configuration`
     return {
         name: flowConfiguration.name,
-        entryNode: { ...entryNode, ...flowConfiguration.entryNode },
         cameraNode: { ...cameraNode, ...flowConfiguration.cameraNode },
         processingNodesPipeline,
     }

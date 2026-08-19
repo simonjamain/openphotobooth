@@ -8,7 +8,7 @@ The app is intentionally small and pragmatic:
 
 - no backend
 - browser-only runtime assumptions
-- modular node-based architecture for entry, camera, and processing steps
+- modular node-based architecture for camera and processing steps
 - offline-friendly behavior by default
 - simple configuration saved in app state
 
@@ -21,7 +21,6 @@ The actual implementation already follows a small extension architecture. The im
 A flow is defined by:
 
 - name
-- entryNode
 - cameraNode
 - processingNodesPipeline
 - optional input
@@ -31,7 +30,6 @@ The core flow schema is:
 ```ts
 export const FlowConfigurationSchema = z.object({
   name: z.string().trim().min(1).default("Untitled flow"),
-  entryNode: NodeConfigurationSchema,
   cameraNode: NodeConfigurationSchema,
   processingNodesPipeline: z.array(NodeConfigurationSchema),
   input: InputSchema.nullish().default(null),
@@ -43,7 +41,6 @@ The corresponding runtime shape is:
 ```ts
 export interface FlowConfiguration {
   name: string
-  entryNode: NodeConfiguration
   cameraNode: NodeConfiguration
   processingNodesPipeline: NodeConfiguration[]
   input?: Input | null
@@ -76,25 +73,25 @@ This is the key point to preserve when authoring extensions: every node is selec
 
 ### Contract by node type
 
-- entry node: `component: Component<{ cameraNode: CameraNode }>`
 - camera node: `capture(): Promise<ImageBitmap[]>`
 - processing node: `process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]>`
+
+A processing node may also provide a `runtimeComponent` to pause the pipeline and show interactive UI. The component receives `images`, `configuration`, `cameraNode` (optional), and `busy` props, and emits `cancel` or `continue` (with an optional `ImageBitmap[]` payload to replace pending images).
 
 The actual project uses the following shape:
 
 ```ts
-export interface EntryNode extends Node {
-  component: Component<{ cameraNode: CameraNode }>
-}
-
 export interface CameraNode extends Node {
   capture(): Promise<ImageBitmap[]>
 }
 
 export interface ProcessingNode extends Node {
   process(images: Readonly<ImageBitmap[]>): Promise<ImageBitmap[]>
+  runtimeComponent?: Component<ProcessingNodeRuntimeComponentProps>
 }
 ```
+
+Photo capture is implemented as processing nodes with a `runtimeComponent`. The pipeline starts with an empty image array `[]`; a capture node captures photos via its `runtimeComponent` and emits `continue` with the captured images, which are then passed to `process()` and on through the rest of the pipeline.
 
 ### App registry
 
@@ -104,7 +101,6 @@ The app stores available nodes by category:
 export interface App {
   flowConfigurations: FlowConfiguration[]
   registeredNodes: {
-    entryNodes: Record<string, EntryNode>
     cameraNodes: Record<string, CameraNode>
     processingNodes: Record<string, ProcessingNode>
   }
@@ -124,9 +120,9 @@ This is the exact pattern used today:
 ```ts
 export const dummyExtension: Extension = {
   registerNodes(app) {
-    app.registeredNodes.entryNodes[dummyEntryNode.id] = dummyEntryNode
     app.registeredNodes.cameraNodes[dummyCameraNode.id] = dummyCameraNode
     app.registeredNodes.processingNodes[dummyProcessingNode.id] = dummyProcessingNode
+    app.registeredNodes.processingNodes[dummySinglePhotoProcessingNode.id] = dummySinglePhotoProcessingNode
   }
 }
 ```
@@ -135,17 +131,17 @@ export const dummyExtension: Extension = {
 
 The project currently ships with these extension groups in `src/extensions/extensionsRegistry.ts`:
 
-- `dummy` — minimal entry, camera, and processing node examples
+- `dummy` — minimal camera and processing node examples, including a single-photo capture node
 - `digicamcontrol` — camera node for API-based tethering
 - `dnpprinters` — processing node for hot-folder printing
-- `overlay` — entry node for multi-photo sequences and overlay processing node
+- `overlay` — photo sequence capture node and overlay processing node
 
 The extension ids already follow namespaced conventions such as:
 
-- `dummy.entryNode.singlePhoto`
+- `dummy.processingNode.singlePhoto`
 - `dummy.cameraNode.lena`
 - `dummy.processingNode.void`
-- `overlay.entryNode.sequence`
+- `overlay.processingNode.sequence`
 - `overlay.processingNode.overlay`
 - `digicamcontrol.cameraNode.api`
 - `hotfolderprint.processingNode.print`
@@ -186,6 +182,7 @@ When creating or updating an extension, follow the project as it exists today in
    - use `dummy` for the simplest minimal example
    - use `digicamcontrol` for camera nodes with config and a settings component
    - use `dnpprinters` for processing nodes that use browser APIs and file-system access
+   - use `dummy.processingNode.singlePhoto` or `overlay.processingNode.sequence` as examples for capture processing nodes with a `runtimeComponent`
 2. Keep the new code minimal and aligned to the current contracts.
 3. Export a plain object with the correct id, name, and behavior.
 4. Register it in `src/extensions/extensionsRegistry.ts`.
@@ -194,9 +191,9 @@ When creating or updating an extension, follow the project as it exists today in
 ### Required patterns
 
 - extension exports: `Extension` with `registerNodes(app)`
-- node registration: write into `app.registeredNodes.entryNodes`, `cameraNodes`, or `processingNodes`
-- id naming: use a vendor or extension prefix such as `vendor.entryNode.name`
-- entry node: exposes a Vue component and emits `photosTaken(images)`
+- node registration: write into `app.registeredNodes.cameraNodes` or `processingNodes`
+- id naming: use a vendor or extension prefix such as `vendor.processingNode.name`
+- capture processing node: has a `runtimeComponent` that captures images and emits `continue` with them
 - camera node: implements `capture()` and returns `ImageBitmap[]`
 - processing node: implements `process(images)` and returns `ImageBitmap[]`
 

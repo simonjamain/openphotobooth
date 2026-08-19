@@ -42,12 +42,12 @@ function cancelSequence() {
     finishFlow();
 }
 
-async function continueSequence() {
+async function continueSequence(newImages?: ImageBitmap[]) {
     if (decisionInProgress.value) {
         return;
     }
 
-    const images = pendingImages.value;
+    const images = newImages ?? pendingImages.value;
     const processingNodes = pendingProcessingNodes.value;
     const runtimeNode = pendingRuntimeNode.value;
 
@@ -96,14 +96,12 @@ async function continueSequence() {
     }
 }
 
-async function onPhotosTaken(images: ImageBitmap[]) {
+async function startPipeline() {
     if (currentFlow.value === null) {
         return;
     }
 
-    stopSelectionListener();
-
-    const pipelineResult = await runPipelineUntilInteractiveNode(currentFlow.value.processingNodesPipeline, images);
+    const pipelineResult = await runPipelineUntilInteractiveNode(currentFlow.value.processingNodesPipeline, []);
 
     if (pipelineResult.status === 'completed') {
         finishFlow();
@@ -154,6 +152,7 @@ async function listenForFlowSelection() {
             boothApp.value,
         );
         stopSelectionListener();
+        void startPipeline();
         return;
     }
 
@@ -194,6 +193,7 @@ onBeforeUnmount(() => {
             @click="() => {
                 stopSelectionListener();
                 currentFlow = instanciateFlowFromConfiguration(flowConfiguration, boothApp);
+                startPipeline();
             }"
         >
             <div
@@ -215,16 +215,10 @@ onBeforeUnmount(() => {
         :is="pendingRuntimeNode.runtimeComponent"
         :images="pendingImages"
         :configuration="pendingRuntimeNode.configuration"
+        :cameraNode="currentFlow.cameraNode"
         :busy="decisionInProgress"
         @cancel="cancelSequence"
         @continue="continueSequence"
-    />
-    <component
-        v-else
-        :is="currentFlow.entryNode.component"
-        :cameraNode="currentFlow.cameraNode"
-        :configuration="currentFlow.entryNode.configuration"
-        @photosTaken="onPhotosTaken"
     />
 </template>
 

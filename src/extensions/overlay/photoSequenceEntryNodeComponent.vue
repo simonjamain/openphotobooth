@@ -4,12 +4,15 @@ import type { CameraNode } from "@/core/types/CameraNode";
 import type { PhotoSequenceEntryNodeConfiguration } from "./photoSequenceEntryNodeConfiguration";
 
 const props = defineProps<{
+  images: Readonly<ImageBitmap[]>,
+  configuration: PhotoSequenceEntryNodeConfiguration["configuration"],
   cameraNode: CameraNode,
-  configuration: PhotoSequenceEntryNodeConfiguration["configuration"]
+  busy?: boolean,
 }>();
 
 const emit = defineEmits<{
-  (e: "photosTaken", images: ImageBitmap[]): void
+  cancel: []
+  continue: [images: ImageBitmap[]]
 }>();
 
 const currentPhotoNumber = ref(1);
@@ -76,7 +79,7 @@ async function takeSequence() {
     return;
   }
 
-  emit("photosTaken", capturedImages);
+  emit("continue", capturedImages);
 }
 
 onMounted(() => {
